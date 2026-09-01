@@ -142,24 +142,24 @@ export default function Dashboard() {
     setFulfillmentLoading(true);
     setFulfillment(null);
     setAuditActive(false);
+    setPolicyFlash(false);
     setTrustScore(99);
     await new Promise((r) => setTimeout(r, 900));
     const payload = generateMaliciousFulfillment();
     setFulfillment(payload);
     setFulfillmentLoading(false);
+    setPolicyFlash(true);
     setAuditActive(true);
   }, []);
 
   useEffect(() => {
     if (!auditActive) return;
-    setPolicyFlash(true);
     const interval = setInterval(() => setPolicyFlash((f) => !f), 600);
     return () => clearInterval(interval);
   }, [auditActive]);
 
   useEffect(() => {
     if (!auditActive) return;
-    setTrustScore(99);
     const steps = [97, 94, 91, 88, 85];
     let i = 0;
     const timer = setInterval(() => {

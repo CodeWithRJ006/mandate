@@ -4,7 +4,7 @@ import stringSimilarity from 'string-similarity';
 // --- AP2 Cryptography Layer ---
 
 export interface MandatePayload {
-  [key: string]: any;
+  [key: string]: unknown;
   nonce?: string;
   expiry?: number;
   signature?: string;
@@ -32,22 +32,23 @@ export function exportKeyPair(keys: crypto.KeyPairKeyObjectResult) {
 /**
  * Deterministically stringifies an object to ensure signature consistency.
  */
-function deterministicStringify(obj: any): string {
+function deterministicStringify(obj: unknown): string {
   if (obj === null || typeof obj !== 'object') {
     return JSON.stringify(obj);
   }
   if (Array.isArray(obj)) {
     return `[${obj.map(deterministicStringify).join(',')}]`;
   }
-  const keys = Object.keys(obj).sort();
-  const res = keys.map((key) => `${JSON.stringify(key)}:${deterministicStringify(obj[key])}`);
+  const record = obj as Record<string, unknown>;
+  const keys = Object.keys(record).sort();
+  const res = keys.map((key) => `${JSON.stringify(key)}:${deterministicStringify(record[key])}`);
   return `{${res.join(',')}}`;
 }
 
 /**
  * Adds a signature, a unique nonce, and an expiry timestamp to the JSON payload.
  */
-export function signMandate(data: Record<string, any>, privateKey: string): MandatePayload {
+export function signMandate(data: Record<string, unknown>, privateKey: string): MandatePayload {
   const payload = {
     ...data,
     nonce: crypto.randomUUID(),
