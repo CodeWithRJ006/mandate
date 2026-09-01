@@ -7,11 +7,6 @@ export interface AgentKeys {
   privateKey: string;
 }
 
-/**
- * 1. Implement Real Cryptography
- * Replace fake signatures with Node.js native asymmetric crypto.
- * Create generateAgentKeyPair() using prime256v1.
- */
 export function generateAgentKeyPair(): AgentKeys {
   const { publicKey, privateKey } = crypto.generateKeyPairSync('ec', {
     namedCurve: 'prime256v1',
@@ -23,10 +18,7 @@ export function generateAgentKeyPair(): AgentKeys {
   };
 }
 
-/**
- * Helper to ensure deterministic stringification for signing/verifying.
- */
-function deterministicStringify(obj: any): string {
+export function deterministicStringify(obj: any): string {
   if (obj === null || typeof obj !== 'object') {
     return JSON.stringify(obj);
   }
@@ -38,30 +30,22 @@ function deterministicStringify(obj: any): string {
   return `{${res.join(',')}}`;
 }
 
-/**
- * Injects a random nonce (UUID) and expiry (current time + 24h) into the payload,
- * then signs the stringified JSON using SHA256.
- * Returns the augmented payload and the signature.
- */
-export function signMandate(payload: Record<string, any>, privateKeyPem: string): { augmentedPayload: any; signature: string } {
+export function signMandate(payload: Record<string, any>, privateKeyPem: string): { augmentedPayload: any; signature: string; canonicalString: string } {
   const augmentedPayload = {
     ...payload,
     nonce: crypto.randomUUID(),
     expiry: Date.now() + 24 * 60 * 60 * 1000, // + 24 hours
   };
 
-  const payloadString = deterministicStringify(augmentedPayload);
+  const canonicalString = deterministicStringify(augmentedPayload);
   const sign = crypto.createSign('SHA256');
-  sign.update(payloadString);
+  sign.update(canonicalString);
   sign.end();
   
   const signature = sign.sign(privateKeyPem, 'base64');
-  return { augmentedPayload, signature };
+  return { augmentedPayload, signature, canonicalString };
 }
 
-/**
- * Uses crypto.createVerify('SHA256') to validate the signature of the payload.
- */
 export function verifyMandate(payload: Record<string, any>, signature: string, publicKeyPem: string): boolean {
   if (payload.expiry && Date.now() > payload.expiry) return false;
   
@@ -73,18 +57,16 @@ export function verifyMandate(payload: Record<string, any>, signature: string, p
   return verify.verify(publicKeyPem, signature, 'base64');
 }
 
-// --- Deterministic Diff Engine ---
-
 export interface MandateContext {
   authorized_amount: number;
   sku: string;
-  [key: string]: unknown;
+  [key: string]: any;
 }
 
 export interface FulfillmentContext {
   actual_amount: number;
   sku: string;
-  [key: string]: unknown;
+  [key: string]: any;
 }
 
 export interface EvaluationResult {
@@ -92,16 +74,10 @@ export interface EvaluationResult {
   reason?: 'SKU_MISMATCH' | 'AMOUNT_EXCEEDED';
 }
 
-/**
- * Evaluates whether the fulfillment meets the mandate criteria based on sku similarity and amount tolerances.
- * The amount tolerance checker accepts differences <= 2%.
- * The semantic string matcher accepts minor SKU typos (>0.85 similarity).
- */
 export function evaluateFulfillment(
   mandate: MandateContext,
   fulfillment: FulfillmentContext
 ): EvaluationResult {
-  // Amount Tolerance (2%)
   const maxAllowedAmount = mandate.authorized_amount * 1.02;
   const minAllowedAmount = mandate.authorized_amount * 0.98;
   
@@ -112,7 +88,6 @@ export function evaluateFulfillment(
     return { status: 'REJECTED', reason: 'AMOUNT_EXCEEDED' };
   }
 
-  // SKU Similarity (>0.85)
   const similarity = stringSimilarity.compareTwoStrings(mandate.sku, fulfillment.sku);
   if (similarity < 0.85) {
     return { status: 'REJECTED', reason: 'SKU_MISMATCH' };

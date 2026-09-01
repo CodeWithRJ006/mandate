@@ -2,26 +2,24 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
-// Initialize the OpenAI client pointing to Groq's endpoint
 const client = new OpenAI({
   apiKey: process.env.GROQ_API_KEY || 'dummy-key',
   baseURL: 'https://api.groq.com/openai/v1',
 });
 
-// Helper function with Retry Logic
-async function callGroqWithRetry(messages: any[], retries = 1): Promise<any> {
+async function callGroqWithRetry(messages: any[], retries = 1, attempt = 0): Promise<{result: any, attempts: number}> {
   try {
     const response = await client.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
       response_format: { type: 'json_object' },
       messages: messages,
-      temperature: 0.1, // Keep it deterministic
+      temperature: 0.1, 
     });
-    return JSON.parse(response.choices[0].message.content || '{}');
+    return { result: JSON.parse(response.choices[0].message.content || '{}'), attempts: attempt };
   } catch (error) {
     if (retries > 0) {
       console.warn('Groq API rate limit or error, retrying...');
-      return callGroqWithRetry(messages, retries - 1);
+      return callGroqWithRetry(messages, retries - 1, attempt + 1);
     }
     throw error;
   }
@@ -32,26 +30,55 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { role, mode, mandate } = body;
 
-    // The Fallback Mock Data (If Groq fails entirely or key is missing)
     const mockIntent = { sku: "Organic Apples", authorized_amount: 2000 };
     const mockFulfillmentValid = { sku: "Organic Apples", actual_amount: 2000 };
     const mockFulfillmentMalicious = { sku: "Organic Apples", actual_amount: 2150, hidden_fee: 150 };
 
+    const generateMockResponse = (data: any, sysPrompt: string, usrPrompt: string, retriesUsed = 0) => {
+      return NextResponse.json({
+        data,
+        telemetry: {
+          systemPrompt: sysPrompt,
+          userPrompt: usrPrompt,
+          rawOutput: JSON.stringify(data, null, 2),
+          latencyMs: 15,
+          provider: 'Mock Fallback',
+          retriesUsed
+        }
+      });
+    };
+
     if (!process.env.GROQ_API_KEY) {
       console.log('No GROQ_API_KEY found. Falling back to mock data.');
-      if (role === 'USER') return NextResponse.json(mockIntent);
-      return NextResponse.json(mode === 'malicious' ? mockFulfillmentMalicious : mockFulfillmentValid);
+      const sys = role === 'USER' ? 'You are a purchasing AI agent.' : `You are a Zepto fulfillment AI agent.`;
+      return generateMockResponse(
+        role === 'USER' ? mockIntent : (mode === 'malicious' ? mockFulfillmentMalicious : mockFulfillmentValid),
+        sys,
+        role === 'USER' ? 'Generate intent mandate' : 'Generate fulfillment'
+      );
     }
 
+    const start = performance.now();
+
     if (role === 'USER') {
-      const messages = [
-        { role: 'system', content: 'You are a purchasing AI agent. Output ONLY a valid JSON object representing an Intent Mandate with two keys: "sku" (string, e.g., "Organic Apples") and "authorized_amount" (number, e.g., 2000).' }
-      ];
+      const sysPrompt = 'You are a purchasing AI agent. Output ONLY a valid JSON object representing an Intent Mandate with two keys: "sku" (string, e.g., "Organic Apples") and "authorized_amount" (number, e.g., 2000).';
+      const messages = [{ role: 'system', content: sysPrompt }];
       try {
-        const result = await callGroqWithRetry(messages);
-        return NextResponse.json(result);
+        const { result, attempts } = await callGroqWithRetry(messages);
+        const latencyMs = Math.round(performance.now() - start);
+        return NextResponse.json({
+          data: result,
+          telemetry: {
+            systemPrompt: sysPrompt,
+            userPrompt: '(System prompt only used)',
+            rawOutput: JSON.stringify(result, null, 2),
+            latencyMs,
+            provider: 'Groq (Llama 3.3 70B)',
+            retriesUsed: attempts
+          }
+        });
       } catch (e) {
-        return NextResponse.json(mockIntent); // Ultimate safety fallback
+        return generateMockResponse(mockIntent, sysPrompt, 'Generate intent mandate', 1);
       }
     }
 
@@ -63,10 +90,21 @@ export async function POST(req: Request) {
       const messages = [{ role: 'system', content: systemPrompt }];
       
       try {
-        const result = await callGroqWithRetry(messages);
-        return NextResponse.json(result);
+        const { result, attempts } = await callGroqWithRetry(messages);
+        const latencyMs = Math.round(performance.now() - start);
+        return NextResponse.json({
+          data: result,
+          telemetry: {
+            systemPrompt: systemPrompt,
+            userPrompt: '(System prompt only used)',
+            rawOutput: JSON.stringify(result, null, 2),
+            latencyMs,
+            provider: 'Groq (Llama 3.3 70B)',
+            retriesUsed: attempts
+          }
+        });
       } catch (e) {
-        return NextResponse.json(mode === 'malicious' ? mockFulfillmentMalicious : mockFulfillmentValid);
+        return generateMockResponse(mode === 'malicious' ? mockFulfillmentMalicious : mockFulfillmentValid, systemPrompt, 'Generate fulfillment', 1);
       }
     }
 
