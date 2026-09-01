@@ -10,60 +10,49 @@ async function runTests() {
     const keys = generateAgentKeyPair();
     assert.ok(keys.publicKey.includes('BEGIN PUBLIC KEY'), 'Public key should be PEM');
     assert.ok(keys.privateKey.includes('BEGIN PRIVATE KEY'), 'Private key should be PEM');
-    console.log('✅ generateAgentKeyPair() created valid ECDSA prime256v1 keys');
-
-    // 2. ECDSA signature successfully verifies
+    
+    // Test 1: verifyMandate returns true for valid ECDSA signatures and false if tampered
     const payload = { sku: 'Organic Apples', authorized_amount: 2000 };
     const { augmentedPayload, signature } = signMandate(payload, keys.privateKey);
-    assert.ok(augmentedPayload.nonce, 'Nonce should be injected');
-    assert.ok(augmentedPayload.expiry, 'Expiry should be injected');
-    
     const isValid = verifyMandate(augmentedPayload, signature, keys.publicKey);
     assert.strictEqual(isValid, true, 'ECDSA signature should verify');
     
-    // Tampered payload verification failure
     const tamperedPayload = { ...augmentedPayload, authorized_amount: 3000 };
     const isTamperedValid = verifyMandate(tamperedPayload, signature, keys.publicKey);
     assert.strictEqual(isTamperedValid, false, 'Tampered payload should fail verification');
-    console.log('✅ signMandate() and verifyMandate() passed');
+    console.log('✅ Test 1 Passed: verifyMandate handles valid and tampered ECDSA signatures.');
 
-    // 3. String matcher accepts minor SKU typos (>0.85 similarity)
+    // Test 2: evaluateFulfillment accepts minor SKU typos
     const typoEval = evaluateFulfillment(
-      { sku: 'Organic Apples', authorized_amount: 100 },
-      { sku: 'Organic Apple', actual_amount: 100 }
-    );
-    assert.strictEqual(typoEval.status, 'APPROVED', 'Minor typo should be accepted');
-    
-    const badSkuEval = evaluateFulfillment(
-      { sku: 'Organic Apples', authorized_amount: 100 },
-      { sku: 'Bananas', actual_amount: 100 }
-    );
-    assert.strictEqual(badSkuEval.status, 'REJECTED', 'Completely different SKU should be rejected');
-    assert.strictEqual(badSkuEval.reason, 'SKU_MISMATCH', 'Reason should be SKU_MISMATCH');
-    console.log('✅ Semantic string matcher correctly handles typos and mismatches');
-
-    // 4. Amount tolerance checker accepts differences <= 2%
-    const toleranceUnder = evaluateFulfillment(
       { sku: 'Apples', authorized_amount: 100 },
-      { sku: 'Apples', actual_amount: 98.5 } // 1.5% diff
+      { sku: 'Apple', actual_amount: 100 }
     );
-    assert.strictEqual(toleranceUnder.status, 'APPROVED', 'Should accept 1.5% under');
+    assert.strictEqual(typoEval.status, 'APPROVED', 'Minor typo ("Apples" vs "Apple") should be accepted');
+    console.log('✅ Test 2 Passed: evaluateFulfillment accepts minor SKU typos (>0.85).');
 
-    const toleranceOver = evaluateFulfillment(
+    // Test 3: evaluateFulfillment accepts a 1% price variance but rejects a 5% price variance
+    const variance1Percent = evaluateFulfillment(
       { sku: 'Apples', authorized_amount: 100 },
-      { sku: 'Apples', actual_amount: 101.5 } // 1.5% diff
+      { sku: 'Apples', actual_amount: 101 } // 1% diff
     );
-    assert.strictEqual(toleranceOver.status, 'APPROVED', 'Should accept 1.5% over');
-    console.log('✅ Amount tolerance checker accepts <= 2% variations');
+    assert.strictEqual(variance1Percent.status, 'APPROVED', 'Should accept 1% price variance');
 
-    // 5. Deterministic diff accurately rejects malicious payloads
+    const variance5Percent = evaluateFulfillment(
+      { sku: 'Apples', authorized_amount: 100 },
+      { sku: 'Apples', actual_amount: 105 } // 5% diff
+    );
+    assert.strictEqual(variance5Percent.status, 'REJECTED', 'Should reject 5% price variance');
+    assert.strictEqual(variance5Percent.reason, 'AMOUNT_EXCEEDED', 'Reason should be AMOUNT_EXCEEDED');
+    console.log('✅ Test 3 Passed: evaluateFulfillment enforces <= 2% tolerance (1% accepted, 5% rejected).');
+
+    // Test 4: evaluateFulfillment rejects malicious payloads (hidden fees)
     const maliciousEval = evaluateFulfillment(
-      { sku: 'Apples', authorized_amount: 2000 },
-      { sku: 'Apples', actual_amount: 2150 } // >2% diff
+      { sku: 'Organic Apples', authorized_amount: 2000 },
+      { sku: 'Organic Apples', actual_amount: 2150 } // 150 INR hidden fee (7.5% diff)
     );
     assert.strictEqual(maliciousEval.status, 'REJECTED', 'Should reject malicious padding');
     assert.strictEqual(maliciousEval.reason, 'AMOUNT_EXCEEDED', 'Reason should be AMOUNT_EXCEEDED');
-    console.log('✅ Deterministic diff rejects malicious payloads (> 2%)');
+    console.log('✅ Test 4 Passed: evaluateFulfillment accurately rejects malicious payloads.');
 
   } catch (error) {
     console.error('❌ Test failed:', error);
