@@ -107,7 +107,7 @@ export default function Dashboard() {
           <button 
             onClick={handleGenerateMandate}
             disabled={!!loading}
-            className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-500 rounded-lg font-medium transition-colors shadow-lg disabled:opacity-50"
+            className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-500 rounded-lg font-medium transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading === 'USER' ? 'Generating...' : 'Generate AP2 Mandate'}
           </button>
@@ -144,14 +144,14 @@ export default function Dashboard() {
             <button 
               onClick={() => handleMerchantSubmit('valid')}
               disabled={!mandate || !!loading}
-              className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-medium transition-colors shadow-lg disabled:opacity-50"
+              className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-medium transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Submit Valid Fulfillment (Happy Path)
             </button>
             <button 
               onClick={() => handleMerchantSubmit('malicious')}
               disabled={!mandate || !!loading}
-              className="w-full py-3 px-4 bg-red-600 hover:bg-red-500 rounded-lg font-medium transition-colors shadow-lg disabled:opacity-50"
+              className="w-full py-3 px-4 bg-red-600 hover:bg-red-500 rounded-lg font-medium transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Submit Malicious Fulfillment (Adversarial)
             </button>
@@ -195,23 +195,21 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {status === 'FLAGGED' && (
-              <button 
-                onClick={handleAppeal}
-                className="w-full py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-medium transition-colors"
-              >
-                Appeal (Merchant)
-              </button>
-            )}
+            <button 
+              onClick={handleAppeal}
+              disabled={status !== 'FLAGGED'}
+              className={`w-full py-2 rounded-lg font-medium transition-colors ${status === 'FLAGGED' ? 'bg-amber-600 hover:bg-amber-500 text-white' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}
+            >
+              Appeal (Merchant)
+            </button>
 
-            {status === 'DISPUTED' && (
-              <button 
-                onClick={handleAdminAccept}
-                className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition-colors"
-              >
-                Accept Appeal (Admin)
-              </button>
-            )}
+            <button 
+              onClick={handleAdminAccept}
+              disabled={status !== 'DISPUTED'}
+              className={`w-full py-2 rounded-lg font-medium transition-colors ${status === 'DISPUTED' ? 'bg-blue-600 hover:bg-blue-500 text-white' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}
+            >
+              Accept Appeal (Admin)
+            </button>
           </div>
         </div>
 
