@@ -1,41 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Razorpay UAP Recourse Layer 🛡️
 
-## Getting Started
+A Deterministic Autonomous Agent Auditing system built for the Razorpay Hackathon. This project prototypes a recourse layer for the Unified Authorization Protocol (UAP), resolving disputes between AI agents autonomously using deterministic validation and cryptographic proofs.
 
-First, run the development server:
+## 🚀 Overview
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+As AI agents increasingly handle purchasing and fulfillment on behalf of users, we need robust recourse layers to evaluate discrepancies (e.g., an agent purchasing *Organic Apples* but the fulfillment agent padding the amount or substituting the SKU). 
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+This prototype simulates a user-agent authorizing a transaction, an adversarial merchant-agent (Zepto) fulfilling it, and a Razorpay auditing layer validating the transaction natively.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🛠️ Tech Stack & Architecture
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Framework**: Next.js 16 (App Router) + Tailwind CSS
+- **LLM Engine**: Groq API + `llama-3.3-70b-versatile` (using OpenAI SDK)
+- **Cryptography**: Node.js Native Crypto (`ECDSA prime256v1`, `SHA-256`)
+- **Diff Engine**: `string-similarity` (Dice's Coefficient)
 
-## Learn More
+### System Components
 
-To learn more about Next.js, take a look at the following resources:
+1. **AP2 Cryptography Layer**: 
+   - Generates deterministic ECDSA `prime256v1` keypairs.
+   - Wraps the user's intent payload with a v4 UUID `nonce` and +24hr `expiry` timestamp.
+   - Signs and verifies the data string deterministically.
+2. **LLM Agent Routing**: 
+   - Forces deterministic structured JSON generation via `response_format: { type: 'json_object' }`.
+   - Includes intelligent retry wrappers and mock fallbacks to guarantee uptime during live demos.
+3. **Deterministic Diff Engine**: 
+   - **Amount Tolerance:** Allows `<= 2%` variation in price.
+   - **SKU Semantic Matching:** Allows minor typos (Similarity `> 0.85`) but strictly rejects mismatched products.
+4. **State Machine UI**:
+   - Manages strict UI states preventing out-of-order execution.
+   - Lifecycle: `IDLE` ➔ `SETTLED` / `FLAGGED (AUTO-REFUND)` ➔ `DISPUTED` ➔ `RESOLVED`.
+   - Dynamically tracks Merchant Trust Scores (99 vs 85).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🔍 What's Real vs. Simulated
 
-## Deploy on Vercel
+- **Real:** Live LLM Agent routing via Groq's high-speed inference, real `ECDSA prime256v1` cryptography (sign & verify), semantic string diffing (`string-similarity`), and exact percentage-based amount tolerances.
+- **Simulated:** Actual banking rails/money movement, and the adversarial prompting (the merchant agent is explicitly prompted to cheat in "Malicious Mode" strictly for demo purposes).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 💻 Getting Started (Local Development)
 
+1. Clone the repository and install dependencies:
+   ```bash
+   npm install
+   ```
 
-## What's Real vs. Simulated
-- **Real:** Live LLM Agents via Anthropic, real ECDSA prime256v1 cryptography (sign/verify), semantic string diffing (string-similarity), and percentage-based amount tolerances.
-- **Simulated:** Actual banking rails/money movement, and adversarial prompting (the merchant agent is explicitly prompted to cheat for demo purposes).
+2. Set up your environment variables. Create a `.env.local` file in the root:
+   ```env
+   GROQ_API_KEY=your_groq_api_key_here
+   ```
+
+3. Run the development server:
+   ```bash
+   npm run dev
+   ```
+
+4. Open [http://localhost:3000](http://localhost:3000) in your browser. 
+   - *Note: If the `GROQ_API_KEY` is omitted, the app will gracefully fall back to mock JSON payloads so the UI demo never breaks.*
+
+---
+*Built for the Razorpay Hackathon.*
