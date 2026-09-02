@@ -161,7 +161,7 @@ export default function Dashboard() {
             disabled={isProcessing}
             className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-500 rounded-lg font-medium transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isProcessing && !mandate ? 'Generating...' : 'Generate AP2 Mandate'}
+            {isProcessing ? 'Generating...' : 'Generate AP2 Mandate'}
           </button>
 
           {mandate && (
@@ -211,14 +211,14 @@ export default function Dashboard() {
               disabled={!mandate || isProcessing}
               className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-medium transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Submit Valid Fulfillment (Happy Path)
+              {isProcessing ? 'Generating...' : 'Submit Valid Fulfillment (Happy Path)'}
             </button>
             <button 
               onClick={() => handleMerchantSubmit('malicious')}
               disabled={!mandate || isProcessing}
               className="w-full py-3 px-4 bg-red-600 hover:bg-red-500 rounded-lg font-medium transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Submit Malicious Fulfillment (Adversarial)
+              {isProcessing ? 'Generating...' : 'Submit Malicious Fulfillment (Adversarial)'}
             </button>
             <p className="text-xs text-neutral-500 mt-2 italic">
               Defense Verification Fixture: This button generates an intentionally naive adversarial payload (padded fee) exclusively to evaluate and demonstrate policy engine rejection boundaries. It contains no offensive capabilities.

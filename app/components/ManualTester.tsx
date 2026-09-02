@@ -29,7 +29,7 @@ export default function ManualTester() {
     <div className="bg-slate-900 border border-slate-800 rounded-lg p-6 my-6 text-slate-200 font-sans text-sm shadow-xl">
       <h3 className="text-xl font-bold text-white mb-2 border-b border-slate-800 pb-2">Bring Your Own Transaction</h3>
       <p className="text-slate-400 text-xs mb-4">Input custom values to test boundary detection on the live policy engine.</p>
-      <form onSubmit={handleEvaluate} className="grid grid-cols-2 gap-4">
+      <form onSubmit={handleEvaluate} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Authorized SKU</label>
           <input className="w-full bg-slate-950 border border-slate-700 p-2 rounded text-slate-200 focus:outline-none focus:border-purple-500 transition-colors" value={authorizedSku} onChange={e => setAuthorizedSku(e.target.value)} />
