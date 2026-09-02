@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { evaluateFulfillment } from '@/lib/uap-logic';
 import stringSimilarity from 'string-similarity';
 
 export async function POST(req: Request) {
@@ -15,34 +16,22 @@ export async function POST(req: Request) {
       fulfillment.sku || ""
     );
 
-    let verdict: 'APPROVED' | 'REJECTED' = 'APPROVED';
-    let reason: string | null = null;
-
-    if (mandate.quantity && fulfillment.quantity && mandate.quantity !== fulfillment.quantity) {
-      verdict = 'REJECTED';
-      reason = 'QUANTITY_MISMATCH';
-    } else if (variancePct > 2.0 || variancePct < -2.0) { // also reject if they underbill too much? The prompt only checks > 2.0 but I'll stick to prompt exactly: `variancePct > 2.0`
-      verdict = 'REJECTED';
-      reason = 'AMOUNT_EXCEEDED';
-    } else if (similarity < 0.85) {
-      verdict = 'REJECTED';
-      reason = 'SKU_MISMATCH';
-    }
+    const result = evaluateFulfillment(mandate, fulfillment, { tolerancePct: 0.02, similarityThreshold: 0.80 });
 
     return NextResponse.json({
-      verdict,
-      reason,
+      verdict: result.status,
+      reason: result.reason || null,
       explainability: {
         authorizedTotal,
         actualTotal,
         deltaAmount: delta,
-        amountVariancePct: variancePct.toFixed(2),
+        amountVariancePct: variancePct,
         skuSimilarity: similarity,
-        withinTolerance: verdict === 'APPROVED',
-        statusMessage: delta > 0 ? `Exceeded authorized limit by ₹${delta}` : 'Within authorized bounds'
+        withinTolerance: result.status === 'APPROVED',
+        statusMessage: result.status === 'APPROVED' ? 'Approved: Within thresholds' : `Rejected: ${result.reason}`
       }
     });
-  } catch {
-    return NextResponse.json({ error: 'Malformed verification payload' }, { status: 400 });
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message || 'Malformed verification payload' }, { status: 400 });
   }
 }

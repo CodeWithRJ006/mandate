@@ -191,10 +191,27 @@ function seededShuffle<T>(array: T[], seed = 42): T[] {
   return copy;
 }
 
-const shuffled = seededShuffle(DATASET);
-const splitIdx = Math.floor(DATASET.length * 0.70); // 31 tuning, 14 held-out
-export const TUNING_SET = shuffled.slice(0, splitIdx);
-export const HELD_OUT_SET = shuffled.slice(splitIdx);
+// Stratified split: guarantees ~30% of EACH category lands in held-out
+function stratifiedSplit(dataset: TestCase[], seed = 42): { tuning: TestCase[]; heldOut: TestCase[] } {
+  const byCategory: Record<string, TestCase[]> = {};
+  for (const tc of dataset) {
+    if (!byCategory[tc.category]) byCategory[tc.category] = [];
+    byCategory[tc.category].push(tc);
+  }
+  const tuning: TestCase[] = [];
+  const heldOut: TestCase[] = [];
+  for (const cat of Object.keys(byCategory).sort()) {
+    const shuffled = seededShuffle(byCategory[cat], seed);
+    const holdCount = Math.max(1, Math.round(shuffled.length * 0.30));
+    heldOut.push(...shuffled.slice(0, holdCount));
+    tuning.push(...shuffled.slice(holdCount));
+  }
+  return { tuning: seededShuffle(tuning, seed), heldOut: seededShuffle(heldOut, seed) };
+}
+
+const { tuning: TUNING_SET_RAW, heldOut: HELD_OUT_SET_RAW } = stratifiedSplit(DATASET);
+export const TUNING_SET = TUNING_SET_RAW;
+export const HELD_OUT_SET = HELD_OUT_SET_RAW;
 
 export function runEvaluation() {
   // --- 1. TUNING SET SWEEP ---
