@@ -112,6 +112,17 @@ export function evaluateFulfillment(
     return { status: 'REJECTED', reason: 'QUANTITY_MISMATCH' };
   }
 
+  if (
+    typeof mandate.authorized_amount !== 'number' || 
+    typeof fulfillment.actual_amount !== 'number' ||
+    isNaN(mandate.authorized_amount) || 
+    isNaN(fulfillment.actual_amount) ||
+    mandate.authorized_amount < 0 ||
+    fulfillment.actual_amount < 0
+  ) {
+    return { status: 'REJECTED', reason: 'AMOUNT_EXCEEDED' };
+  }
+
   const auth_total = mandate.authorized_amount * mandateQty;
   const actual_total = fulfillment.actual_amount * fulfillmentQty;
 
