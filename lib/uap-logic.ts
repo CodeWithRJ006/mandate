@@ -130,12 +130,7 @@ export function evaluateFulfillment(
   const sim = config.similarityThreshold ?? 0.80;
 
   const maxAllowedAmount = auth_total * (1 + tol);
-  const minAllowedAmount = auth_total * (1 - tol);
-  
-  if (
-    actual_total > maxAllowedAmount ||
-    actual_total < minAllowedAmount
-  ) {
+  if (actual_total > maxAllowedAmount) {
     return { status: 'REJECTED', reason: 'AMOUNT_EXCEEDED' };
   }
 

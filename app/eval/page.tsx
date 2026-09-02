@@ -47,7 +47,7 @@ export default function EvalDashboard() {
         
         if (tc.mandate.quantity !== tc.fulfillment.quantity) {
           isFlagged = true; reason = 'QUANTITY_MISMATCH';
-        } else if (actTotal > authTotal * (1 + t) || actTotal < authTotal * (1 - t)) {
+        } else if (actTotal > authTotal * (1 + t)) {
           isFlagged = true; reason = 'AMOUNT_EXCEEDED';
         } else if (stringSimilarity.compareTwoStrings(tc.mandate.sku, tc.fulfillment.sku) < s) {
           isFlagged = true; reason = 'SKU_MISMATCH';
