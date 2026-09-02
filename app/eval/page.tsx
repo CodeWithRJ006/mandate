@@ -136,7 +136,7 @@ export default function EvalDashboard() {
           
           {/* Confusion Matrix */}
           <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-xl">
-            <h2 className="text-xl font-bold mb-6 text-white border-b border-slate-800 pb-2">Confusion Matrix</h2>
+            <h2 className="text-xl font-bold mb-6 text-white border-b border-slate-800 pb-2">Live Held-Out Evaluation (N=13)</h2>
             <div className="grid grid-cols-2 gap-4 text-center">
               <div className="bg-emerald-900/30 border border-emerald-500/50 p-6 rounded-lg transition-all duration-300">
                 <div className="text-emerald-400 font-black text-4xl">{dynamicMetrics.matrix.TP}</div>
@@ -161,7 +161,7 @@ export default function EvalDashboard() {
             </div>
           </div>
 
-          {/* Tradeoff Summary & Raw Results */}
+          {/* Cost Asymmetry & Tuning Phase (Fixed Context) */}
           <div className="space-y-6">
             <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-xl">
               <h2 className="text-xl font-bold mb-4 text-white border-b border-slate-800 pb-2">The Cost Asymmetry of Agentic Recourse</h2>
@@ -179,10 +179,10 @@ export default function EvalDashboard() {
                 </ul>
                 <div className="border-t border-slate-800/50 pt-4 mt-4 text-slate-200">
                   <p className="mb-2">
-                    <strong className="text-purple-400">Tuning Rationale:</strong> We selected a 2.0% amount tolerance and a 0.80 Sørensen-Dice threshold to prioritize <strong>100% Recall</strong> against unrecoverable financial loss. As evidenced by our 70/30 tuning sweep, explicitly lowering the similarity threshold from 0.85 to 0.80 safely accommodated legitimate unit-annotations (e.g., &quot;Organic Apples&quot; vs &quot;Organic Apples (1kg)&quot;), successfully reducing our tuning-set False Positive Rate (FPR) from 29.4% down to 23.5% without sacrificing recall.
+                    <strong className="text-purple-400">Offline 70% Tuning Phase:</strong> We explicitly prioritize <strong>100% Recall</strong> against unrecoverable financial loss. During our offline stratified sweep on the 70% tuning set, we found that lowering the strict SKU similarity threshold from 0.90 to 0.80 successfully accommodated benign aggregator mutations (e.g. "Organic Apples" vs "Organic Apples (1kg)"). This reduced our tuning-set False Positive Rate (FPR) from 38.5% down to 30.8% without sacrificing recall.
                   </p>
                   <p className="text-xs text-slate-500 italic">
-                    (Note: Our 45-case offline dataset is intentionally saturated with boundary and adversarial cases to stress-test the engine, artificially inflating this baseline FPR relative to a normal, predominantly clean production distribution).
+                    (Note: Our 45-case offline dataset is intentionally saturated with boundary and adversarial cases to stress-test the engine, artificially inflating the FPR relative to a normal, predominantly clean production distribution).
                   </p>
                 </div>
               </div>
