@@ -59,6 +59,41 @@ In high-throughput payment aggregation, failure modes are asymmetric:
 **Tuning Rationale:** We selected a 2.0% amount tolerance and a 0.80 Sørensen-Dice threshold to prioritize **100% Recall** against unrecoverable financial loss. As evidenced by our 70/30 tuning sweep, explicitly lowering the similarity threshold from 0.85 to 0.80 safely accommodated legitimate unit-annotations (e.g., "Organic Apples" vs "Organic Apples (1kg)"), successfully reducing our tuning-set False Positive Rate (FPR) from 29.4% down to 23.5% without sacrificing recall. 
 *(Note: Our 45-case offline dataset is intentionally saturated with boundary and adversarial cases to stress-test the engine, artificially inflating this baseline FPR relative to a normal, predominantly clean production distribution).*
 
+## Live API Verification (Bring Your Own Transaction)
+
+To independently verify that the policy engine is a real, live service (and not a UI illusion), you can evaluate arbitrary payloads against the deterministic diff engine directly from your terminal:
+
+```bash
+curl -X POST https://razorpay-uap-recourse.vercel.app/api/verify \
+  -H "Content-Type: application/json" \
+  -d '{
+    "mandate": {
+      "sku": "Organic Apples",
+      "authorized_amount": 1000,
+      "quantity": 1
+    },
+    "fulfillment": {
+      "sku": "Organic Apples (1kg)",
+      "actual_amount": 1015,
+      "quantity": 1
+    }
+  }'
+```
+
+**Expected JSON Response:**
+```json
+{
+  "verdict": "APPROVED",
+  "reason": null,
+  "explainability": {
+    "skuSimilarity": 0.8275862068965517,
+    "amountVariancePct": 1.5,
+    "deltaAmount": 15,
+    "statusMessage": "Approved: Within 2% threshold"
+  }
+}
+```
+
 ## What's Real vs. Simulated
 
 - **Real:** Llama 3.3 70B inference via Groq (zero-cost, model-agnostic architecture), real ECDSA prime256v1 cryptography (sign/verify), semantic string diffing (>0.80 tolerance), and percentage-based amount tolerances (<= 2%).
