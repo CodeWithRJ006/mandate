@@ -128,6 +128,7 @@ export default function EvalDashboard() {
           <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-xl transition-all duration-300">
             <h3 className="text-slate-400 text-sm font-bold uppercase tracking-wide">False Positive Rate (FPR)</h3>
             <div className="text-5xl font-black text-amber-400 mt-2">{(dynamicMetrics.metrics.fpr * 100).toFixed(1)}%</div>
+            <div className="text-[10px] text-slate-600 mt-1 font-mono">N={dynamicMetrics.matrix.FP + dynamicMetrics.matrix.TN} negative-class cases</div>
           </div>
         </div>
 
@@ -188,7 +189,19 @@ export default function EvalDashboard() {
             </div>
 
             <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-xl">
-              <h2 className="text-sm font-bold mb-4 text-white uppercase tracking-wider">Test Suite Execution Log</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider">Test Suite Execution Log</h2>
+                <div className="flex items-center gap-2">
+                  {(amountTolerance !== 2 || skuSimilarity !== 80) && (
+                    <span className="text-[10px] bg-amber-900/40 text-amber-400 border border-amber-500/30 px-2 py-1 rounded font-mono">
+                      CUSTOM
+                    </span>
+                  )}
+                  <span className="text-[10px] text-slate-500 font-mono">
+                    Tol: {amountTolerance}% · Sim: {skuSimilarity}%
+                  </span>
+                </div>
+              </div>
               <div className="space-y-2 max-h-[300px] overflow-auto pr-2">
                 {dynamicMetrics.results.map((r: any, i: number) => (
                   <div key={i} className="text-xs flex justify-between items-center border-b border-slate-800/50 pb-2">
