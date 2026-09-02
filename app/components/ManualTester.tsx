@@ -3,9 +3,9 @@ import React, { useState } from 'react';
 
 export default function ManualTester() {
   const [authorizedSku, setAuthorizedSku] = useState("Organic Apples");
-  const [authorizedAmount, setAuthorizedAmount] = useState(2000);
+  const [authorizedAmount, setAuthorizedAmount] = useState<string>("2000");
   const [fulfilledSku, setFulfilledSku] = useState("Organic Apples (1kg)");
-  const [fulfilledAmount, setFulfilledAmount] = useState(2030);
+  const [fulfilledAmount, setFulfilledAmount] = useState<string>("2030");
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
@@ -36,7 +36,10 @@ export default function ManualTester() {
         </div>
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Authorized Amount (&#8377;)</label>
-          <input type="number" className="w-full bg-slate-950 border border-slate-700 p-2 rounded text-slate-200 focus:outline-none focus:border-purple-500 transition-colors" value={authorizedAmount} onChange={e => setAuthorizedAmount(Number(e.target.value))} />
+          <input type="text" inputMode="numeric" pattern="[0-9]*" className="w-full bg-slate-950 border border-slate-700 p-2 rounded text-slate-200 focus:outline-none focus:border-purple-500 transition-colors" value={authorizedAmount} onChange={e => {
+            const val = e.target.value.replace(/[^0-9]/g, '');
+            setAuthorizedAmount(val);
+          }} />
         </div>
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Fulfilled SKU</label>
@@ -44,7 +47,10 @@ export default function ManualTester() {
         </div>
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Fulfilled Amount (&#8377;)</label>
-          <input type="number" className="w-full bg-slate-950 border border-slate-700 p-2 rounded text-slate-200 focus:outline-none focus:border-purple-500 transition-colors" value={fulfilledAmount} onChange={e => setFulfilledAmount(Number(e.target.value))} />
+          <input type="text" inputMode="numeric" pattern="[0-9]*" className="w-full bg-slate-950 border border-slate-700 p-2 rounded text-slate-200 focus:outline-none focus:border-purple-500 transition-colors" value={fulfilledAmount} onChange={e => {
+            const val = e.target.value.replace(/[^0-9]/g, '');
+            setFulfilledAmount(val);
+          }} />
         </div>
         <button type="submit" disabled={loading} className="col-span-2 mt-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 py-3 rounded-lg font-bold text-white transition-all shadow-lg disabled:opacity-50">
           {loading ? "Evaluating..." : "Run Deterministic Diff Engine"}
