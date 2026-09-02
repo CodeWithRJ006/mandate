@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { generateKeysAndSign, evaluateDiff, AgentExecutionTelemetry, MandateVerificationBundle } from './actions';
+import EvidenceDrawer from './components/EvidenceDrawer';
 
 export default function Dashboard() {
   // User State
@@ -321,9 +322,7 @@ export default function Dashboard() {
                    <span className="text-slate-500">Public Key (PEM):</span>
                    <code className="text-blue-300 bg-black p-2 rounded whitespace-pre-wrap">{verificationBundle.publicKeyPem}</code>
                 </div>
-                <button onClick={handleCopyCommand} className="mt-4 w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-mono border border-slate-700 transition-colors">
-                  📋 Copy Terminal Verification Command
-                </button>
+                <EvidenceDrawer mandateBundle={{ payload: JSON.parse(verificationBundle.canonicalString), publicKeyPem: verificationBundle.publicKeyPem, signature: verificationBundle.signature, auditDecision: status }} />
               </div>
             </details>
           )}

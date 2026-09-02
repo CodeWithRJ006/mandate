@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import ManualTester from '../components/ManualTester';
 
 export default function EvalDashboard() {
   const [data, setData] = useState<any>(null);
@@ -121,8 +122,9 @@ export default function EvalDashboard() {
               </div>
             </div>
           </div>
-
         </div>
+        
+        <ManualTester />
       </div>
     </div>
   );
