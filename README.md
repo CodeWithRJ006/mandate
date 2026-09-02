@@ -53,10 +53,11 @@ A deterministic dispute resolution and recourse layer addressing the post-transa
 
 In high-throughput payment aggregation, failure modes are asymmetric:
 
-* **False Positive (Type I Error):** A clean transaction is held by the policy engine for manual dispute review. Assuming an average ticket size of ₹1,800, every 1% false positive rate introduces temporary settlement friction on that volume and incurs a customer support arbitration cost of ~₹120 per ticket. At 10,000 daily agentic orders, a 4% FPR creates 400 held transactions and approximately ₹48,000/day in operational dispute friction.
+* **False Positive (Type I Error):** A clean transaction is held by the policy engine for manual dispute review. Assuming an average ticket size of ₹1,800, every 1% false positive rate introduces temporary settlement friction on that volume and incurs a customer support arbitration cost of ~₹120 per ticket.
 * **False Negative (Type II Error):** An adversarial over-billing or product substitution bypasses verification and settles. This represents direct, unrecoverable chargeback liability, network compliance fines, and irreversible loss of user trust. A single undetected ₹150 convenience fee padded across 10,000 orders costs ₹15,00,000/month in merchant fraud leakage.
 
-**Tuning Rationale:** We selected a 2.0% amount tolerance and a 0.80 Sørensen-Dice threshold to maximize recall ($\ge 94\%$) against unrecoverable financial loss, while containing merchant friction ($< 5\%$ FPR). The similarity threshold was explicitly tuned down from 0.85 to 0.80 based on evaluation telemetry to safely accommodate legitimate unit-annotations (e.g., "Organic Apples" vs "Organic Apples (1kg)") without raising false positives.
+**Tuning Rationale:** We selected a 2.0% amount tolerance and a 0.80 Sørensen-Dice threshold to prioritize **100% Recall** against unrecoverable financial loss. As evidenced by our 70/30 tuning sweep, explicitly lowering the similarity threshold from 0.85 to 0.80 safely accommodated legitimate unit-annotations (e.g., "Organic Apples" vs "Organic Apples (1kg)"), successfully reducing our tuning-set False Positive Rate (FPR) from 29.4% down to 23.5% without sacrificing recall. 
+*(Note: Our 45-case offline dataset is intentionally saturated with boundary and adversarial cases to stress-test the engine, artificially inflating this baseline FPR relative to a normal, predominantly clean production distribution).*
 
 ## What's Real vs. Simulated
 

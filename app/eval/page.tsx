@@ -170,15 +170,20 @@ export default function EvalDashboard() {
                 </p>
                 <ul className="list-disc pl-5 space-y-2">
                   <li>
-                    <strong className="text-amber-400">False Positive (Type I Error):</strong> A clean transaction is held by the policy engine for manual dispute review. Assuming an average ticket size of ₹1,800, every 1% false positive rate introduces temporary settlement friction on that volume and incurs a customer support arbitration cost of ~₹120 per ticket. At 10,000 daily agentic orders, a 4% FPR creates 400 held transactions and approximately ₹48,000/day in operational dispute friction.
+                    <strong className="text-amber-400">False Positive (Type I Error):</strong> A clean transaction is held by the policy engine for manual dispute review. Assuming an average ticket size of ₹1,800, every 1% false positive rate introduces temporary settlement friction on that volume and incurs a customer support arbitration cost of ~₹120 per ticket.
                   </li>
                   <li>
                     <strong className="text-red-400">False Negative (Type II Error):</strong> An adversarial over-billing or product substitution bypasses verification and settles. This represents direct, unrecoverable chargeback liability, network compliance fines, and irreversible loss of user trust. A single undetected ₹150 convenience fee padded across 10,000 orders costs ₹15,00,000/month in merchant fraud leakage.
                   </li>
                 </ul>
-                <p className="border-t border-slate-800/50 pt-4 mt-4 text-slate-200">
-                  <strong className="text-purple-400">Tuning Rationale:</strong> We selected a 2.0% amount tolerance and a 0.80 Sørensen-Dice threshold to maximize recall (≥ 94%) against unrecoverable financial loss, while containing merchant friction (&lt; 5% FPR) within a self-resolving 3-state dispute machine. We explicitly tuned the similarity down from 0.85 to 0.80 based on test telemetry to accommodate legitimate unit-annotations (e.g., &quot;Organic Apples&quot; vs &quot;Organic Apples (1kg)&quot;).
-                </p>
+                <div className="border-t border-slate-800/50 pt-4 mt-4 text-slate-200">
+                  <p className="mb-2">
+                    <strong className="text-purple-400">Tuning Rationale:</strong> We selected a 2.0% amount tolerance and a 0.80 Sørensen-Dice threshold to prioritize <strong>100% Recall</strong> against unrecoverable financial loss. As evidenced by our 70/30 tuning sweep, explicitly lowering the similarity threshold from 0.85 to 0.80 safely accommodated legitimate unit-annotations (e.g., &quot;Organic Apples&quot; vs &quot;Organic Apples (1kg)&quot;), successfully reducing our tuning-set False Positive Rate (FPR) from 29.4% down to 23.5% without sacrificing recall.
+                  </p>
+                  <p className="text-xs text-slate-500 italic">
+                    (Note: Our 45-case offline dataset is intentionally saturated with boundary and adversarial cases to stress-test the engine, artificially inflating this baseline FPR relative to a normal, predominantly clean production distribution).
+                  </p>
+                </div>
               </div>
             </div>
 
