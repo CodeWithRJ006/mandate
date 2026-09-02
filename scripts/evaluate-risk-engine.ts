@@ -287,7 +287,8 @@ export function runEvaluation() {
     matrix: { TP, FP, TN, FN },
     metrics: { precision, recall, f1, fpr },
     tuningSweep,
-    results
+    results,
+    rawDataset: HELD_OUT_SET
   };
 }
 

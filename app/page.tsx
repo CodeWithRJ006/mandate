@@ -5,6 +5,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { generateKeysAndSign, evaluateDiff, AgentExecutionTelemetry, MandateVerificationBundle } from './actions';
 import EvidenceDrawer from './components/EvidenceDrawer';
+import ManualTester from './components/ManualTester';
 
 export default function Dashboard() {
   // User State
@@ -328,7 +329,10 @@ export default function Dashboard() {
           )}
 
         </div>
-
+      </div>
+      
+      <div className="max-w-7xl mx-auto px-8 pb-8">
+        <ManualTester />
       </div>
     </div>
   );
