@@ -88,10 +88,23 @@ export default function EvalDashboard() {
           {/* Tradeoff Summary & Raw Results */}
           <div className="space-y-6">
             <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-xl">
-              <h2 className="text-xl font-bold mb-4 text-white border-b border-slate-800 pb-2">Business Tradeoff Summary</h2>
-              <p className="text-slate-300 text-sm leading-relaxed">
-                At a 2.0% tolerance threshold, our FPR is kept manageable. <strong className="text-amber-400">False positives generate merchant support tickets</strong>, whereas <strong className="text-red-400">False negatives represent unrecoverable financial liability</strong>. The engine is tuned for high recall ({">"}90%) to protect Razorpay's liability, while containing merchant friction.
-              </p>
+              <h2 className="text-xl font-bold mb-4 text-white border-b border-slate-800 pb-2">The Cost Asymmetry of Agentic Recourse</h2>
+              <div className="text-slate-300 text-sm leading-relaxed space-y-4">
+                <p>
+                  In high-throughput payment aggregation, failure modes are asymmetric:
+                </p>
+                <ul className="list-disc pl-5 space-y-2">
+                  <li>
+                    <strong className="text-amber-400">False Positive (Type I Error):</strong> A clean transaction is held by the policy engine for manual dispute review. Assuming an average ticket size of ₹1,800, every 1% false positive rate introduces temporary settlement friction on that volume and incurs a customer support arbitration cost of ~₹120 per ticket. At 10,000 daily agentic orders, a 4% FPR creates 400 held transactions and approximately ₹48,000/day in operational dispute friction.
+                  </li>
+                  <li>
+                    <strong className="text-red-400">False Negative (Type II Error):</strong> An adversarial over-billing or product substitution bypasses verification and settles. This represents direct, unrecoverable chargeback liability, network compliance fines, and irreversible loss of user trust. A single undetected ₹150 convenience fee padded across 10,000 orders costs ₹15,00,000/month in merchant fraud leakage.
+                  </li>
+                </ul>
+                <p className="border-t border-slate-800/50 pt-4 mt-4 text-slate-200">
+                  <strong className="text-purple-400">Tuning Rationale:</strong> We selected a 2.0% amount tolerance and a 0.85 Sørensen–Dice threshold to maximize recall (≥ 94%) against unrecoverable financial loss, while containing merchant friction (&lt; 5% FPR) within a self-resolving 3-state dispute machine.
+                </p>
+              </div>
             </div>
 
             <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-xl">
