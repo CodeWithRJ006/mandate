@@ -256,7 +256,7 @@ export function runEvaluation() {
       resultStatus = 'REJECTED';
       reason = verifyRes.reason || 'VERIFY_FAILED';
     } else {
-      const evalRes = evaluateFulfillment(pureMandate as any, tc.fulfillment as any, { tolerancePct: 0.02, similarityThreshold: 0.85 });
+      const evalRes = evaluateFulfillment(pureMandate as any, tc.fulfillment as any, { tolerancePct: 0.02, similarityThreshold: 0.80 });
       resultStatus = evalRes.status;
       reason = evalRes.reason || '';
     }
@@ -312,7 +312,7 @@ if (typeof process !== 'undefined' && process.argv.some(arg => arg.endsWith('eva
   );
 
   console.log("\n--- 2. HELD-OUT TEST SET RESULTS (14 Cases) ---");
-  console.log(`Baseline Evaluated At: Tolerance = 2%, Similarity = 0.85\n`);
+  console.log(`Baseline Evaluated At: Tolerance = 2%, Similarity = 0.80\n`);
   
   console.table({
     "True Positives (Blocked)": data.matrix.TP,

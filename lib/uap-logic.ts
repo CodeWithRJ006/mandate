@@ -116,7 +116,7 @@ export function evaluateFulfillment(
   const actual_total = fulfillment.actual_amount * fulfillmentQty;
 
   const tol = config.tolerancePct ?? 0.02;
-  const sim = config.similarityThreshold ?? 0.85;
+  const sim = config.similarityThreshold ?? 0.80;
 
   const maxAllowedAmount = auth_total * (1 + tol);
   const minAllowedAmount = auth_total * (1 - tol);

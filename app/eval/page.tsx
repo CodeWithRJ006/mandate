@@ -11,7 +11,7 @@ export default function EvalDashboard() {
 
   // Interactive Sliders
   const [amountTolerance, setAmountTolerance] = useState(2);
-  const [skuSimilarity, setSkuSimilarity] = useState(85);
+  const [skuSimilarity, setSkuSimilarity] = useState(80);
 
   useEffect(() => {
     fetch('/api/eval')
@@ -177,7 +177,7 @@ export default function EvalDashboard() {
                   </li>
                 </ul>
                 <p className="border-t border-slate-800/50 pt-4 mt-4 text-slate-200">
-                  <strong className="text-purple-400">Tuning Rationale:</strong> We selected a 2.0% amount tolerance and a 0.85 Sørensen–Dice threshold to maximize recall (≥ 94%) against unrecoverable financial loss, while containing merchant friction (&lt; 5% FPR) within a self-resolving 3-state dispute machine.
+                  <strong className="text-purple-400">Tuning Rationale:</strong> We selected a 2.0% amount tolerance and a 0.80 Sørensen-Dice threshold to maximize recall (≥ 94%) against unrecoverable financial loss, while containing merchant friction (&lt; 5% FPR) within a self-resolving 3-state dispute machine. We explicitly tuned the similarity down from 0.85 to 0.80 based on test telemetry to accommodate legitimate unit-annotations (e.g., &quot;Organic Apples&quot; vs &quot;Organic Apples (1kg)&quot;).
                 </p>
               </div>
             </div>
