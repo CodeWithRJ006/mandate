@@ -107,3 +107,6 @@ curl -X POST https://razorpay-uap-recourse.vercel.app/api/verify \
 
 - **Real:** Llama 3.3 70B inference via Groq (zero-cost, model-agnostic architecture), real ECDSA prime256v1 cryptography (sign/verify), semantic string diffing (>0.80 tolerance), and percentage-based amount tolerances (<= 2%).
 - **Simulated:** Bank settlement rails, and adversarial merchant prompting (forced for demo purposes).
+
+## Hackathon Compliance Disclaimer
+This project is built explicitly for the Defensive Track (Track 2). The "Malicious Fulfillment" generation in the UI is strictly a mock simulator designed solely to exercise and demonstrate the defensive verification engine. It contains no exploit payloads, evasion techniques, or offensive AI capabilities. The internal prompts simply instruct the test agent to output a hardcoded fee discrepancy in order to validate the deterministic auto-responder logic.
