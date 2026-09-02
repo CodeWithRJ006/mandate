@@ -27,7 +27,7 @@ export default function ManualTester() {
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-lg p-6 my-6 text-slate-200 font-sans text-sm shadow-xl">
-      <h3 className="text-xl font-bold text-white mb-2 border-b border-slate-800 pb-2">Arbitrary Payload Evaluator</h3>
+      <h3 className="text-xl font-bold text-white mb-2 border-b border-slate-800 pb-2">Bring Your Own Transaction</h3>
       <p className="text-slate-400 text-xs mb-4">Input custom values to test boundary detection on the live policy engine.</p>
       <form onSubmit={handleEvaluate} className="grid grid-cols-2 gap-4">
         <div>
@@ -35,7 +35,7 @@ export default function ManualTester() {
           <input className="w-full bg-slate-950 border border-slate-700 p-2 rounded text-slate-200 focus:outline-none focus:border-purple-500 transition-colors" value={authorizedSku} onChange={e => setAuthorizedSku(e.target.value)} />
         </div>
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Authorized Amount (₹)</label>
+          <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Authorized Amount (&#8377;)</label>
           <input type="number" className="w-full bg-slate-950 border border-slate-700 p-2 rounded text-slate-200 focus:outline-none focus:border-purple-500 transition-colors" value={authorizedAmount} onChange={e => setAuthorizedAmount(Number(e.target.value))} />
         </div>
         <div>
@@ -43,7 +43,7 @@ export default function ManualTester() {
           <input className="w-full bg-slate-950 border border-slate-700 p-2 rounded text-slate-200 focus:outline-none focus:border-purple-500 transition-colors" value={fulfilledSku} onChange={e => setFulfilledSku(e.target.value)} />
         </div>
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Fulfilled Amount (₹)</label>
+          <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Fulfilled Amount (&#8377;)</label>
           <input type="number" className="w-full bg-slate-950 border border-slate-700 p-2 rounded text-slate-200 focus:outline-none focus:border-purple-500 transition-colors" value={fulfilledAmount} onChange={e => setFulfilledAmount(Number(e.target.value))} />
         </div>
         <button type="submit" disabled={loading} className="col-span-2 mt-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 py-3 rounded-lg font-bold text-white transition-all shadow-lg disabled:opacity-50">
@@ -58,9 +58,9 @@ export default function ManualTester() {
             <span className="text-xs font-medium text-slate-400 uppercase">{result.reason || "Within Authorized Parameters"}</span>
           </div>
           <div className="text-sm space-y-1.5 text-slate-300">
-            <p>SKU Similarity Score: <span className="font-mono bg-slate-900 px-1 py-0.5 rounded text-white">{(result.explainability.skuSimilarity * 100).toFixed(1)}%</span> <span className="text-xs text-slate-500">(Threshold: 85%)</span></p>
+            <p>SKU Similarity Score: <span className="font-mono bg-slate-900 px-1 py-0.5 rounded text-white">{(result.explainability.skuSimilarity * 100).toFixed(1)}%</span> <span className="text-xs text-slate-500">(Threshold: 80%)</span></p>
             <p>Amount Variance: <span className="font-mono bg-slate-900 px-1 py-0.5 rounded text-white">{result.explainability.amountVariancePct}%</span> <span className="text-xs text-slate-500">(Max Allowed: 2.0%)</span></p>
-            <p>Delta: <span className="font-bold">₹{result.explainability.deltaAmount}</span> <span className="text-xs text-slate-400 italic">({result.explainability.statusMessage})</span></p>
+            <p>Delta: <span className="font-bold">&#8377;{result.explainability.deltaAmount}</span> <span className="text-xs text-slate-400 italic">({result.explainability.statusMessage})</span></p>
           </div>
         </div>
       )}
