@@ -49,6 +49,13 @@ A deterministic dispute resolution and recourse layer addressing the post-transa
    ```
    *(Note: If the `GROQ_API_KEY` is omitted, the app will gracefully fall back to mock JSON payloads so the UI demo never breaks.)*
 
+4. Run the offline evaluation harness to reproduce the baseline tuning metrics:
+   ```bash
+   npx tsx scripts/evaluate-risk-engine.ts
+   ```
+   > [!NOTE]
+   > **Windows PowerShell Users:** Depending on your active code page, special characters like 'ø' in 'Sørensen' may render as 'SA,rensen', and em-dashes may render as '?'. This is a terminal display artifact and does not affect the underlying evaluation math or string similarity execution.
+
 ## The Cost Asymmetry of Agentic Recourse
 
 In high-throughput payment aggregation, failure modes are asymmetric:
