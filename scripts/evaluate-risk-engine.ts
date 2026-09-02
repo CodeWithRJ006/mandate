@@ -317,18 +317,18 @@ if (typeof process !== 'undefined' && process.argv.some(arg => arg.endsWith('eva
 
   const data = runEvaluation();
 
-  console.log("--- 1. TUNING SET SWEEP RESULTS (31 Cases) ---");
+  console.log(`--- 1. TUNING SET SWEEP RESULTS (${TUNING_SET.length} Cases) ---`);
   console.table(
     data.tuningSweep.map(s => ({
-      "Tolerance": `${(s.tol * 100).toFixed(0)}%`,
-      "Similarity": s.sim.toFixed(2),
+      Tolerance: `${(s.tol * 100).toFixed(0)}%`,
+      Similarity: s.sim.toFixed(2),
       "F1 Score": s.f1.toFixed(3),
-      "Recall": s.recall.toFixed(3),
-      "FPR": s.fpr.toFixed(3)
+      Recall: s.recall.toFixed(3),
+      FPR: s.fpr.toFixed(3)
     }))
   );
 
-  console.log("\n--- 2. HELD-OUT TEST SET RESULTS (14 Cases) ---");
+  console.log(`\n--- 2. HELD-OUT TEST SET RESULTS (${HELD_OUT_SET.length} Cases) ---`);
   console.log(`Baseline Evaluated At: Tolerance = 2%, Similarity = 0.60\n`);
   
   console.table({
