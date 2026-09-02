@@ -95,9 +95,15 @@ export interface EvaluationResult {
   reason?: 'SKU_MISMATCH' | 'AMOUNT_EXCEEDED' | 'QUANTITY_MISMATCH';
 }
 
+export interface PolicyConfig {
+  tolerancePct?: number;
+  similarityThreshold?: number;
+}
+
 export function evaluateFulfillment(
   mandate: MandateContext,
-  fulfillment: FulfillmentContext
+  fulfillment: FulfillmentContext,
+  config: PolicyConfig = {}
 ): EvaluationResult {
   const mandateQty = mandate.quantity || 1;
   const fulfillmentQty = fulfillment.quantity || 1;
@@ -109,8 +115,11 @@ export function evaluateFulfillment(
   const auth_total = mandate.authorized_amount * mandateQty;
   const actual_total = fulfillment.actual_amount * fulfillmentQty;
 
-  const maxAllowedAmount = auth_total * 1.02;
-  const minAllowedAmount = auth_total * 0.98;
+  const tol = config.tolerancePct ?? 0.02;
+  const sim = config.similarityThreshold ?? 0.85;
+
+  const maxAllowedAmount = auth_total * (1 + tol);
+  const minAllowedAmount = auth_total * (1 - tol);
   
   if (
     actual_total > maxAllowedAmount ||
@@ -120,7 +129,7 @@ export function evaluateFulfillment(
   }
 
   const similarity = stringSimilarity.compareTwoStrings(mandate.sku, fulfillment.sku);
-  if (similarity < 0.85) {
+  if (similarity < sim) {
     return { status: 'REJECTED', reason: 'SKU_MISMATCH' };
   }
 

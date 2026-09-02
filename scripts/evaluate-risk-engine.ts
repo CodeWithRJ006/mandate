@@ -197,14 +197,52 @@ export const TUNING_SET = shuffled.slice(0, splitIdx);
 export const HELD_OUT_SET = shuffled.slice(splitIdx);
 
 export function runEvaluation() {
+  // --- 1. TUNING SET SWEEP ---
+  const tuningSweep = [];
+  const tolerances = [0.01, 0.02, 0.03, 0.04, 0.05];
+  const similarities = [0.75, 0.80, 0.85, 0.90, 0.95];
+
+  for (const tol of tolerances) {
+    for (const sim of similarities) {
+      let TP = 0, FP = 0, TN = 0, FN = 0;
+      for (const tc of TUNING_SET) {
+        nonceStore.clear();
+        if (tc.category === 'nonce_replay') nonceStore.add(tc.mandate.nonce);
+        
+        let resultStatus = 'APPROVED';
+        
+        // Extract signature from payload so canonical stringification matches exactly
+        const { signature, publicKeyPem, ...pureMandate } = tc.mandate;
+        const verifyRes = verifyMandate(pureMandate, tc.mandate.signature, keys.publicKey);
+        if (!verifyRes.isValid) {
+          resultStatus = 'REJECTED';
+        } else {
+          const evalRes = evaluateFulfillment(tc.mandate as any, tc.fulfillment as any, { tolerancePct: tol, similarityThreshold: sim });
+          resultStatus = evalRes.status;
+        }
+
+        const isFraud = tc.expected === 'REJECT';
+        const isFlagged = resultStatus === 'REJECTED';
+
+        if (isFraud && isFlagged) TP++;
+        else if (!isFraud && isFlagged) FP++;
+        else if (!isFraud && !isFlagged) TN++;
+        else if (isFraud && !isFlagged) FN++;
+      }
+      const precision = TP / (TP + FP) || 0;
+      const recall = TP / (TP + FN) || 0;
+      const f1 = 2 * (precision * recall) / (precision + recall) || 0;
+      const fpr = FP / (FP + TN) || 0;
+      tuningSweep.push({ tol, sim, TP, FP, TN, FN, precision, recall, f1, fpr });
+    }
+  }
+
+  // --- 2. HELD OUT SET EVALUATION (Baseline: 0.02, 0.85) ---
   let TP = 0, FP = 0, TN = 0, FN = 0;
   const results = [];
 
-  // Strictly execute on the held-out 30% partition
   for (const tc of HELD_OUT_SET) {
-    nonceStore.clear(); // Isolate state between tests
-    
-    // Inject replay nonce manually to simulate the true rejection path
+    nonceStore.clear();
     if (tc.category === 'nonce_replay') {
       nonceStore.add(tc.mandate.nonce);
     }
@@ -212,12 +250,13 @@ export function runEvaluation() {
     let resultStatus = 'APPROVED';
     let reason = '';
 
-    const verifyRes = verifyMandate(tc.mandate, tc.mandate.signature, keys.publicKey);
+    const { signature, publicKeyPem, ...pureMandate } = tc.mandate;
+    const verifyRes = verifyMandate(pureMandate, tc.mandate.signature, keys.publicKey);
     if (!verifyRes.isValid) {
       resultStatus = 'REJECTED';
       reason = verifyRes.reason || 'VERIFY_FAILED';
     } else {
-      const evalRes = evaluateFulfillment(tc.mandate as any, tc.fulfillment as any);
+      const evalRes = evaluateFulfillment(pureMandate as any, tc.fulfillment as any, { tolerancePct: 0.02, similarityThreshold: 0.85 });
       resultStatus = evalRes.status;
       reason = evalRes.reason || '';
     }
@@ -247,6 +286,44 @@ export function runEvaluation() {
   return {
     matrix: { TP, FP, TN, FN },
     metrics: { precision, recall, f1, fpr },
+    tuningSweep,
     results
   };
+}
+
+// Allow script to execute and log output if run via CLI
+if (typeof process !== 'undefined' && process.argv.some(arg => arg.endsWith('evaluate-risk-engine.ts'))) {
+  console.log("==================================================");
+  console.log("   RAZORPAY UAP - AI RISK MANAGER EVALUATION");
+  console.log("==================================================\n");
+
+  const data = runEvaluation();
+
+  console.log("--- 1. TUNING SET SWEEP RESULTS (31 Cases) ---");
+  console.table(
+    data.tuningSweep.map(s => ({
+      "Tolerance": `${(s.tol * 100).toFixed(0)}%`,
+      "Similarity": s.sim.toFixed(2),
+      "F1 Score": s.f1.toFixed(3),
+      "Recall": s.recall.toFixed(3),
+      "FPR": s.fpr.toFixed(3)
+    }))
+  );
+
+  console.log("\n--- 2. HELD-OUT TEST SET RESULTS (14 Cases) ---");
+  console.log(`Baseline Evaluated At: Tolerance = 2%, Similarity = 0.85\n`);
+  
+  console.table({
+    "True Positives (Blocked)": data.matrix.TP,
+    "False Positives (Friction)": data.matrix.FP,
+    "True Negatives (Approved)": data.matrix.TN,
+    "False Negatives (Liability)": data.matrix.FN
+  });
+
+  console.log("\nMetrics:");
+  console.log(` Precision : ${(data.metrics.precision * 100).toFixed(1)}%`);
+  console.log(` Recall    : ${(data.metrics.recall * 100).toFixed(1)}%`);
+  console.log(` F1 Score  : ${(data.metrics.f1 * 100).toFixed(1)}%`);
+  console.log(` FPR       : ${(data.metrics.fpr * 100).toFixed(1)}%`);
+  console.log("\n==================================================");
 }
