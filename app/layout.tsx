@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "UAP Recourse · Razorpay Liability Layer",
+  title: "Razorpay UAP · AI Risk Manager",
   description:
-    "Technical dashboard for AP2 payment protocol monitoring and deterministic policy enforcement",
+    "Deterministic detector, cryptographic verifier, and automated dispute responder for agentic commerce settlement",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
