@@ -30,9 +30,23 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { role, mode, mandate } = body;
 
-    const mockIntent = { sku: "Organic Apples", authorized_amount: 2000 };
-    const mockFulfillmentValid = { sku: "Organic Apples", actual_amount: 2000 };
-    const mockFulfillmentMalicious = { sku: "Organic Apples", actual_amount: 2150, hidden_fee: 150 };
+    const PRESETS: Record<string, { sku: string, amount: number }> = {
+      'Groceries': { sku: "Organic Apples", amount: 2000 },
+      'Electronics': { sku: "iPhone 15 Pro", amount: 120000 },
+      'Fashion': { sku: "Nike Air Force 1", amount: 8500 },
+      'Custom': { sku: "Premium Coffee Beans", amount: 1200 }
+    };
+    
+    const selectedPreset = PRESETS[body.preset] || PRESETS['Groceries'];
+
+    const mockIntent = { sku: selectedPreset.sku, authorized_amount: selectedPreset.amount };
+    
+    // For merchant fallbacks, use the provided mandate if available to ensure matching
+    const baseSku = mandate?.sku || selectedPreset.sku;
+    const baseAmt = mandate?.authorized_amount || selectedPreset.amount;
+    
+    const mockFulfillmentValid = { sku: baseSku, actual_amount: baseAmt };
+    const mockFulfillmentMalicious = { sku: baseSku, actual_amount: baseAmt + 150, hidden_fee: 150 };
 
     const generateMockResponse = (data: any, sysPrompt: string, usrPrompt: string, retriesUsed = 0) => {
       return NextResponse.json({
@@ -61,7 +75,7 @@ export async function POST(req: Request) {
     const start = performance.now();
 
     if (role === 'USER') {
-      const sysPrompt = 'You are a purchasing AI agent. Output ONLY a valid JSON object representing an Intent Mandate with two keys: "sku" (string, e.g., "Organic Apples") and "authorized_amount" (number, e.g., 2000).';
+      const sysPrompt = `You are a purchasing AI agent. Output ONLY a valid JSON object representing an Intent Mandate for the ${body.preset || 'Groceries'} category with two keys: "sku" (string, e.g., "${selectedPreset.sku}") and "authorized_amount" (number, e.g., ${selectedPreset.amount}).`;
       const messages = [{ role: 'system', content: sysPrompt }];
       try {
         const { result, attempts } = await callGroqWithRetry(messages);

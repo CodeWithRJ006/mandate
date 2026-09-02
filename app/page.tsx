@@ -23,6 +23,7 @@ export default function Dashboard() {
   const [status, setStatus] = useState<string>('IDLE');
   const [trustScore, setTrustScore] = useState<number>(99);
   const [flashColor, setFlashColor] = useState<string>('');
+  const [preset, setPreset] = useState<string>('Groceries');
   
   // Execution Guards
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
@@ -53,7 +54,7 @@ export default function Dashboard() {
       const res = await fetch('/api/agents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: 'USER' })
+        body: JSON.stringify({ role: 'USER', preset })
       });
       const responseJson = await res.json();
       
@@ -154,7 +155,20 @@ export default function Dashboard() {
         
         {/* User Terminal */}
         <div className="border border-slate-800 rounded-xl bg-slate-900/50 flex flex-col p-6 shadow-xl">
-          <h2 className="text-xl font-semibold mb-4 text-blue-400 border-b border-slate-800 pb-2">User Terminal</h2>
+          <div className="flex justify-between items-center mb-4 border-b border-slate-800 pb-2">
+            <h2 className="text-xl font-semibold text-blue-400">User Terminal</h2>
+            <select 
+              value={preset} 
+              onChange={(e) => setPreset(e.target.value)}
+              disabled={isProcessing}
+              className="bg-slate-950 border border-slate-700 text-slate-300 text-sm rounded p-1 focus:outline-none focus:border-blue-500"
+            >
+              <option value="Groceries">Groceries</option>
+              <option value="Electronics">Electronics</option>
+              <option value="Fashion">Fashion</option>
+              <option value="Custom">Custom</option>
+            </select>
+          </div>
           
           <button 
             onClick={handleGenerateMandate}
