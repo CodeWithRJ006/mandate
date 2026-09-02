@@ -15,11 +15,11 @@ async function runTests() {
     const payload = { sku: 'Organic Apples', authorized_amount: 2000 };
     const { augmentedPayload, signature } = signMandate(payload, keys.privateKey);
     const isValid = verifyMandate(augmentedPayload, signature, keys.publicKey);
-    assert.strictEqual(isValid, true, 'ECDSA signature should verify');
+    assert.strictEqual(isValid.isValid, true, 'ECDSA signature should verify');
     
     const tamperedPayload = { ...augmentedPayload, authorized_amount: 3000 };
     const isTamperedValid = verifyMandate(tamperedPayload, signature, keys.publicKey);
-    assert.strictEqual(isTamperedValid, false, 'Tampered payload should fail verification');
+    assert.strictEqual(isTamperedValid.isValid, false, 'Tampered payload should fail verification');
     console.log('✅ Test 1 Passed: verifyMandate handles valid and tampered ECDSA signatures.');
 
     // Test 2: evaluateFulfillment accepts minor SKU typos

@@ -7,6 +7,8 @@ export interface AgentKeys {
   privateKey: string;
 }
 
+export const nonceStore = new Set<string>();
+
 export function generateAgentKeyPair(): AgentKeys {
   const { publicKey, privateKey } = crypto.generateKeyPairSync('ec', {
     namedCurve: 'prime256v1',
@@ -46,44 +48,73 @@ export function signMandate(payload: Record<string, any>, privateKeyPem: string)
   return { augmentedPayload, signature, canonicalString };
 }
 
-export function verifyMandate(payload: Record<string, any>, signature: string, publicKeyPem: string): boolean {
-  if (payload.expiry && Date.now() > payload.expiry) return false;
+export interface MandateVerificationResult {
+  isValid: boolean;
+  reason?: string;
+}
+
+export function verifyMandate(payload: Record<string, any>, signature: string, publicKeyPem: string): MandateVerificationResult {
+  if (payload.expiry && Date.now() > payload.expiry) {
+    return { isValid: false, reason: 'MANDATE_EXPIRED' };
+  }
+  
+  if (nonceStore.has(payload.nonce)) {
+    return { isValid: false, reason: 'NONCE_REUSED' };
+  }
   
   const payloadString = deterministicStringify(payload);
   const verify = crypto.createVerify('SHA256');
   verify.update(payloadString);
   verify.end();
   
-  return verify.verify(publicKeyPem, signature, 'base64');
+  const isValidSig = verify.verify(publicKeyPem, signature, 'base64');
+  if (!isValidSig) {
+    return { isValid: false, reason: 'SIGNATURE_INVALID' };
+  }
+  
+  nonceStore.add(payload.nonce);
+  return { isValid: true };
 }
 
 export interface MandateContext {
   authorized_amount: number;
   sku: string;
+  quantity?: number;
   [key: string]: any;
 }
 
 export interface FulfillmentContext {
   actual_amount: number;
   sku: string;
+  quantity?: number;
   [key: string]: any;
 }
 
 export interface EvaluationResult {
   status: 'APPROVED' | 'REJECTED';
-  reason?: 'SKU_MISMATCH' | 'AMOUNT_EXCEEDED';
+  reason?: 'SKU_MISMATCH' | 'AMOUNT_EXCEEDED' | 'QUANTITY_MISMATCH';
 }
 
 export function evaluateFulfillment(
   mandate: MandateContext,
   fulfillment: FulfillmentContext
 ): EvaluationResult {
-  const maxAllowedAmount = mandate.authorized_amount * 1.02;
-  const minAllowedAmount = mandate.authorized_amount * 0.98;
+  const mandateQty = mandate.quantity || 1;
+  const fulfillmentQty = fulfillment.quantity || 1;
+  
+  if (mandateQty !== fulfillmentQty) {
+    return { status: 'REJECTED', reason: 'QUANTITY_MISMATCH' };
+  }
+
+  const auth_total = mandate.authorized_amount * mandateQty;
+  const actual_total = fulfillment.actual_amount * fulfillmentQty;
+
+  const maxAllowedAmount = auth_total * 1.02;
+  const minAllowedAmount = auth_total * 0.98;
   
   if (
-    fulfillment.actual_amount > maxAllowedAmount ||
-    fulfillment.actual_amount < minAllowedAmount
+    actual_total > maxAllowedAmount ||
+    actual_total < minAllowedAmount
   ) {
     return { status: 'REJECTED', reason: 'AMOUNT_EXCEEDED' };
   }
