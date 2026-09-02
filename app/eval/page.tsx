@@ -219,7 +219,7 @@ export default function EvalDashboard() {
           </div>
         </div>
         
-        <ManualTester />
+        <ManualTester context="eval" />
       </div>
     </div>
   );

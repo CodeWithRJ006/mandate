@@ -1,13 +1,30 @@
 "use client";
 import React, { useState } from 'react';
 
-export default function ManualTester() {
+export default function ManualTester({ context }: { context?: 'main' | 'eval' }) {
   const [authorizedSku, setAuthorizedSku] = useState("Organic Apples");
   const [authorizedAmount, setAuthorizedAmount] = useState<string>("2000");
   const [fulfilledSku, setFulfilledSku] = useState("Organic Apples (1kg)");
   const [fulfilledAmount, setFulfilledAmount] = useState<string>("2030");
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+
+  const PRESETS: Record<string, any> = {
+    'Groceries': { authSku: "Organic Apples", authAmt: "2000", fullSku: "Organic Apples (1kg)", fullAmt: "2030" },
+    'Electronics': { authSku: "iPhone 15 Pro", authAmt: "120000", fullSku: "iPhone 15 Pro", fullAmt: "120150" },
+    'Fashion': { authSku: "Nike Air Force 1", authAmt: "8500", fullSku: "Nike Air Force 1", fullAmt: "8900" },
+    'Custom': { authSku: "Premium Coffee Beans", authAmt: "1200", fullSku: "Coffee Beans 250g", fullAmt: "1200" }
+  };
+
+  const handlePresetChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const preset = PRESETS[e.target.value];
+    if (preset) {
+      setAuthorizedSku(preset.authSku);
+      setAuthorizedAmount(preset.authAmt);
+      setFulfilledSku(preset.fullSku);
+      setFulfilledAmount(preset.fullAmt);
+    }
+  };
 
   async function handleEvaluate(e: React.FormEvent) {
     e.preventDefault();
@@ -27,8 +44,26 @@ export default function ManualTester() {
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-lg p-6 my-6 text-slate-200 font-sans text-sm shadow-xl">
-      <h3 className="text-xl font-bold text-white mb-2 border-b border-slate-800 pb-2">Bring Your Own Transaction</h3>
-      <p className="text-slate-400 text-xs mb-4">Input custom values to test boundary detection on the live policy engine.</p>
+      <div className="flex justify-between items-center mb-2 border-b border-slate-800 pb-2">
+        <h3 className="text-xl font-bold text-white">Bring Your Own Transaction</h3>
+        {context === 'main' && (
+          <select 
+            onChange={handlePresetChange}
+            className="bg-slate-950 border border-slate-700 text-slate-300 text-sm rounded p-1 focus:outline-none focus:border-blue-500"
+          >
+            <option value="Groceries">Groceries</option>
+            <option value="Electronics">Electronics</option>
+            <option value="Fashion">Fashion</option>
+            <option value="Custom">Custom</option>
+          </select>
+        )}
+      </div>
+      <p className="text-slate-400 text-xs mb-4">
+        Input custom values to test boundary detection on the live policy engine.
+        {context === 'eval' && (
+          <span className="block mt-1 text-emerald-400 font-semibold italic">Tested against the live production baseline (60% similarity / 2% tolerance) — independent of the sliders above.</span>
+        )}
+      </p>
       <form onSubmit={handleEvaluate} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Authorized SKU</label>

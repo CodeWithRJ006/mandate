@@ -346,7 +346,7 @@ export default function Dashboard() {
       </div>
       
       <div className="max-w-7xl mx-auto px-8 pb-8">
-        <ManualTester />
+        <ManualTester context="main" />
       </div>
     </div>
   );
