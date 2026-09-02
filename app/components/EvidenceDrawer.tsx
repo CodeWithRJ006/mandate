@@ -39,13 +39,17 @@ export default function EvidenceDrawer({ mandateBundle }: { mandateBundle: any }
   }
 
   return (
-    <div className="border-t border-neutral-800 pt-4 mt-4 font-mono text-xs">
+    <div className="border-t border-slate-800 pt-4 mt-4 font-mono text-xs">
       <div className="flex flex-col sm:flex-row gap-2">
-        <button onClick={downloadEvidencePack} className="bg-neutral-800 hover:bg-neutral-700 text-neutral-200 px-3 py-1.5 rounded border border-neutral-700 transition-colors">
-          📥 Download Signed Evidence Pack (.json)
+        <button onClick={downloadEvidencePack} className="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded border border-slate-700 transition-colors flex items-center gap-2">
+          <span>📦</span> Download Signed Evidence Pack (.json)
         </button>
-        <button onClick={copyCommand} className="bg-neutral-800 hover:bg-neutral-700 text-neutral-200 px-3 py-1.5 rounded border border-neutral-700 transition-colors">
-          {copied ? "✓ Copied Terminal Command" : "📋 Copy Terminal Verify Snippet"}
+        <button onClick={copyCommand} className="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded border border-slate-700 transition-colors flex items-center gap-2">
+          {copied ? (
+            <><span className="text-emerald-400">✓</span> Copied Terminal Command</>
+          ) : (
+            <><span>⌨️</span> Copy Terminal Verify Snippet</>
+          )}
         </button>
       </div>
     </div>
