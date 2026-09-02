@@ -217,7 +217,7 @@ export function runEvaluation() {
   // --- 1. TUNING SET SWEEP ---
   const tuningSweep = [];
   const tolerances = [0.01, 0.02, 0.03, 0.04, 0.05];
-  const similarities = [0.75, 0.80, 0.85, 0.90, 0.95];
+  const similarities = [0.95, 0.90, 0.85, 0.80, 0.75, 0.70, 0.65, 0.60, 0.55, 0.50, 0.45, 0.40];
 
   for (const tol of tolerances) {
     for (const sim of similarities) {
@@ -273,7 +273,7 @@ export function runEvaluation() {
       resultStatus = 'REJECTED';
       reason = verifyRes.reason || 'VERIFY_FAILED';
     } else {
-      const evalRes = evaluateFulfillment(pureMandate as any, tc.fulfillment as any, { tolerancePct: 0.02, similarityThreshold: 0.80 });
+      const evalRes = evaluateFulfillment(pureMandate as any, tc.fulfillment as any, { tolerancePct: 0.02, similarityThreshold: 0.60 });
       resultStatus = evalRes.status;
       reason = evalRes.reason || '';
     }
@@ -329,7 +329,7 @@ if (typeof process !== 'undefined' && process.argv.some(arg => arg.endsWith('eva
   );
 
   console.log("\n--- 2. HELD-OUT TEST SET RESULTS (14 Cases) ---");
-  console.log(`Baseline Evaluated At: Tolerance = 2%, Similarity = 0.80\n`);
+  console.log(`Baseline Evaluated At: Tolerance = 2%, Similarity = 0.60\n`);
   
   console.table({
     "True Positives (Blocked)": data.matrix.TP,

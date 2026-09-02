@@ -58,7 +58,7 @@ export default function ManualTester() {
             <span className="text-xs font-medium text-slate-400 uppercase">{result.reason || "Within Authorized Parameters"}</span>
           </div>
           <div className="text-sm space-y-1.5 text-slate-300">
-            <p>SKU Similarity Score: <span className="font-mono bg-slate-900 px-1 py-0.5 rounded text-white">{(result.explainability.skuSimilarity * 100).toFixed(1)}%</span> <span className="text-xs text-slate-500">(Threshold: 80%)</span></p>
+            <p>SKU Similarity Score: <span className="font-mono bg-slate-900 px-1 py-0.5 rounded text-white">{(result.explainability.skuSimilarity * 100).toFixed(1)}%</span> <span className="text-xs text-slate-500">(Threshold: 60%)</span></p>
             <p>Amount Variance: <span className="font-mono bg-slate-900 px-1 py-0.5 rounded text-white">{result.explainability.amountVariancePct}%</span> <span className="text-xs text-slate-500">(Max Allowed: 2.0%)</span></p>
             <p>Delta: <span className="font-bold">&#8377;{result.explainability.deltaAmount}</span> <span className="text-xs text-slate-400 italic">({result.explainability.statusMessage})</span></p>
           </div>

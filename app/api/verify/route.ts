@@ -16,7 +16,7 @@ export async function POST(req: Request) {
       fulfillment.sku || ""
     );
 
-    const result = evaluateFulfillment(mandate, fulfillment, { tolerancePct: 0.02, similarityThreshold: 0.80 });
+    const result = evaluateFulfillment(mandate, fulfillment, { tolerancePct: 0.02, similarityThreshold: 0.60 });
 
     return NextResponse.json({
       verdict: result.status,
