@@ -218,6 +218,9 @@ export default function Dashboard() {
             >
               Submit Malicious Fulfillment (Adversarial)
             </button>
+            <p className="text-xs text-neutral-500 mt-2 italic">
+              Defense Verification Fixture: This button generates an intentionally naive adversarial payload (padded fee) exclusively to evaluate and demonstrate policy engine rejection boundaries. It contains no offensive capabilities.
+            </p>
           </div>
 
           {fulfillment && (

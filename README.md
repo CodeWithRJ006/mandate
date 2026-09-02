@@ -2,6 +2,13 @@
 
 A deterministic dispute resolution and recourse layer addressing the post-transaction liability gap for NPCI's Unified Agent Protocol (UAP). As AI agents increasingly handle autonomous purchasing and fulfillment, this system provides mathematical and cryptographic guarantees to settle disputes without human intervention.
 
+## Track 2 Alignment: AI Risk Manager
+
+* **The Single Class of Loss:** Post-authorization payload drift and settlement discrepancies in agentic commerce.
+* **Detector:** Deterministic JSON diff engine evaluating semantic SKU similarity and quantity/amount variance against signed parameters.
+* **Verifier:** Asymmetric ECDSA prime256v1 cryptographic engine verifying nonces, 24-hour expiration windows, and non-repudiation.
+* **Auto-Responder:** Three-state dispute arbitration machine triggering automated bounded refunds via Razorpay API webhooks and merchant trust score throttling.
+
 ## Architecture Flow
 
 ```text
