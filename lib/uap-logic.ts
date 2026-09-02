@@ -34,9 +34,9 @@ export function deterministicStringify(obj: any): string {
 
 export function signMandate(payload: Record<string, any>, privateKeyPem: string): { augmentedPayload: any; signature: string; canonicalString: string } {
   const augmentedPayload = {
-    ...payload,
     nonce: crypto.randomUUID(),
     expiry: Date.now() + 24 * 60 * 60 * 1000, // + 24 hours
+    ...payload,
   };
 
   const canonicalString = deterministicStringify(augmentedPayload);
