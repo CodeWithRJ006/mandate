@@ -102,8 +102,10 @@ export default function Dashboard() {
       setMerchantTelemetry(responseJson.telemetry);
 
       const evaluation = await evaluateDiff(
-        { sku: mandate.sku, authorized_amount: mandate.authorized_amount },
-        { sku: payload.sku, actual_amount: payload.actual_amount }
+        mandate,
+        { sku: payload.sku, actual_amount: payload.actual_amount },
+        signature,
+        keys.publicKey
       );
 
       if (evaluation.status === 'APPROVED') {

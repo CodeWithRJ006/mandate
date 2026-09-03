@@ -2,7 +2,8 @@ import { loadEnvConfig } from '@next/env';
 loadEnvConfig(process.cwd());
 
 import { POST } from '../app/api/agents/route';
-import { generateKeysAndSign, evaluateDiff } from '../app/actions';
+import { generateKeysAndSign } from '../app/actions';
+import { evaluateFulfillment } from '../lib/uap-logic';
 
 async function run() {
   console.log("--- 1. USER INTENT NETWORK RESPONSE (/api/agents) ---");
@@ -33,9 +34,9 @@ async function run() {
   console.log(JSON.stringify(json2, null, 2));
 
   console.log("\n--- 4. DETERMINISTIC DIFF EVALUATION (MALICIOUS) ---");
-  const diffEval = await evaluateDiff(
-    { sku: mandateData.augmentedPayload.sku, authorized_amount: mandateData.augmentedPayload.authorized_amount },
-    { sku: json2.data.sku, actual_amount: json2.data.actual_amount }
+  const diffEval = evaluateFulfillment(
+    { sku: mandateData.augmentedPayload.sku, authorized_amount: mandateData.augmentedPayload.authorized_amount } as any,
+    { sku: json2.data.sku, actual_amount: json2.data.actual_amount } as any
   );
   console.log(JSON.stringify(diffEval, null, 2));
 }

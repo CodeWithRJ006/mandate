@@ -46,6 +46,10 @@ export async function verifySignatureAction(payload: Record<string, any>, signat
   return verifyMandate(payload, signature, publicKey);
 }
 
-export async function evaluateDiff(mandate: MandateContext, fulfillment: FulfillmentContext) {
+export async function evaluateDiff(mandate: any, fulfillment: any, signature: string, publicKeyPem: string) {
+  const verification = verifyMandate(mandate, signature, publicKeyPem);
+  if (!verification.isValid) {
+    return { status: 'REJECTED', reason: verification.reason || 'SIGNATURE_INVALID' };
+  }
   return evaluateFulfillment(mandate, fulfillment);
 }
