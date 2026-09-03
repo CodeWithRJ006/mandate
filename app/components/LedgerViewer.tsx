@@ -17,6 +17,7 @@ export default function LedgerViewer() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line
     fetchLedger();
     const interval = setInterval(fetchLedger, 5000);
     return () => clearInterval(interval);

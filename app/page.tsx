@@ -88,7 +88,7 @@ export default function Dashboard() {
     setApiWarning('');
 
     try {
-      let currentMandate = { ...mandate };
+      const currentMandate = { ...mandate };
       
       // If tampering signature, we modify the payload without regenerating the signature
       if (attackType === 'signature_tamper') {
