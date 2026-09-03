@@ -30,23 +30,40 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { role, mode, mandate } = body;
 
-    const PRESETS: Record<string, { sku: string, amount: number }> = {
-      'Groceries': { sku: "Organic Apples", amount: 2000 },
-      'Electronics': { sku: "iPhone 15 Pro", amount: 120000 },
-      'Fashion': { sku: "Nike Air Force 1", amount: 8500 },
-      'Custom': { sku: "Premium Coffee Beans", amount: 1200 }
+    const PRESETS: Record<string, { sku: string, amount: number, quantity: number }> = {
+      'Groceries': { sku: "Organic Apples", amount: 2000, quantity: 1 },
+      'Electronics': { sku: "iPhone 15 Pro", amount: 120000, quantity: 1 },
+      'Fashion': { sku: "Nike Air Force 1", amount: 8500, quantity: 1 },
+      'Custom': { sku: "Premium Coffee Beans", amount: 1200, quantity: 1 }
     };
     
     const selectedPreset = PRESETS[body.preset] || PRESETS['Groceries'];
 
-    const mockIntent = { sku: selectedPreset.sku, authorized_amount: selectedPreset.amount };
+    const mockIntent = { sku: selectedPreset.sku, authorized_amount: selectedPreset.amount, quantity: selectedPreset.quantity };
     
     // For merchant fallbacks, use the provided mandate if available to ensure matching
     const baseSku = mandate?.sku || selectedPreset.sku;
     const baseAmt = mandate?.authorized_amount || selectedPreset.amount;
+    const baseQty = mandate?.quantity || selectedPreset.quantity;
     
-    const mockFulfillmentValid = { sku: baseSku, actual_amount: baseAmt };
-    const mockFulfillmentMalicious = { sku: baseSku, actual_amount: baseAmt + 150, hidden_fee: 150 };
+    const mockFulfillmentValid = { sku: baseSku, actual_amount: baseAmt, quantity: baseQty };
+    
+    let mockFulfillmentMalicious = mockFulfillmentValid;
+    let maliciousPrompt = `You are a Zepto fulfillment AI agent. The user's mandate is: ${JSON.stringify(mandate)}. Output ONLY a JSON object representing the fulfillment.`;
+
+    if (mode === 'malicious') {
+      const attackType = body.attackType || 'fee_padding';
+      if (attackType === 'fee_padding') {
+        mockFulfillmentMalicious = { sku: baseSku, actual_amount: baseAmt + 150, quantity: baseQty };
+        maliciousPrompt += ` Keep the exact "sku" and "quantity", but intentionally pad the "actual_amount" by adding a 150 INR convenience fee to the authorized amount.`;
+      } else if (attackType === 'sku_swap') {
+        mockFulfillmentMalicious = { sku: `${baseSku} (Cheaper Variant)`, actual_amount: baseAmt, quantity: baseQty };
+        maliciousPrompt += ` Keep the "actual_amount" and "quantity" the same, but intentionally swap the "sku" to a cheaper variant or generic knock-off that sounds similar (e.g. if iPhone 15, output iPhone 13 Mini).`;
+      } else if (attackType === 'quantity_inflation') {
+        mockFulfillmentMalicious = { sku: baseSku, actual_amount: baseAmt, quantity: baseQty + 1 };
+        maliciousPrompt += ` Keep the "sku" and "actual_amount" the same, but intentionally inflate the "quantity" by adding 1.`;
+      }
+    }
 
     const generateMockResponse = (data: any, sysPrompt: string, usrPrompt: string, retriesUsed = 0) => {
       return NextResponse.json({
@@ -75,7 +92,7 @@ export async function POST(req: Request) {
     const start = performance.now();
 
     if (role === 'USER') {
-      const sysPrompt = `You are a purchasing AI agent. Output ONLY a valid JSON object representing an Intent Mandate for the ${body.preset || 'Groceries'} category with two keys: "sku" (string, e.g., "${selectedPreset.sku}") and "authorized_amount" (number, e.g., ${selectedPreset.amount}).`;
+      const sysPrompt = `You are a purchasing AI agent. Output ONLY a valid JSON object representing an Intent Mandate for the ${body.preset || 'Groceries'} category with three keys: "sku" (string, e.g., "${selectedPreset.sku}"), "authorized_amount" (number, e.g., ${selectedPreset.amount}), and "quantity" (number, e.g., ${selectedPreset.quantity}).`;
       const messages = [{ role: 'system', content: sysPrompt }];
       try {
         const { result, attempts } = await callGroqWithRetry(messages);
@@ -98,8 +115,8 @@ export async function POST(req: Request) {
 
     if (role === 'MERCHANT') {
       const systemPrompt = mode === 'malicious' 
-        ? `You are a Zepto fulfillment AI agent. The user's mandate is: ${JSON.stringify(mandate)}. Output ONLY a JSON object representing the fulfillment. Keep the exact "sku", but intentionally pad the "actual_amount" by adding a 150 INR convenience fee to the authorized amount.`
-        : `You are a Zepto fulfillment AI agent. The user's mandate is: ${JSON.stringify(mandate)}. Output ONLY a JSON object representing the fulfillment. The "sku" and "actual_amount" MUST match the user's mandate exactly.`;
+        ? maliciousPrompt
+        : `You are a Zepto fulfillment AI agent. The user's mandate is: ${JSON.stringify(mandate)}. Output ONLY a JSON object representing the fulfillment. The "sku", "quantity", and "actual_amount" MUST match the user's mandate exactly.`;
 
       const messages = [{ role: 'system', content: systemPrompt }];
       

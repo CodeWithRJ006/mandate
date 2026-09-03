@@ -21,6 +21,7 @@ export default function Dashboard() {
 
   // Audit/Global State
   const [status, setStatus] = useState<string>('IDLE');
+  const [resultReason, setResultReason] = useState<string | null>(null);
   const [trustScore, setTrustScore] = useState<number>(99);
   const [flashColor, setFlashColor] = useState<string>('');
   const [preset, setPreset] = useState<string>('Groceries');
@@ -80,16 +81,28 @@ export default function Dashboard() {
     setIsProcessing(false);
   };
 
-  const handleMerchantSubmit = async (mode: 'valid' | 'malicious') => {
+  const handleMerchantSubmit = async (mode: 'valid' | 'malicious', attackType?: string) => {
     if (!mandate || isProcessing) return;
     setIsProcessing(true);
     setApiWarning('');
 
     try {
+      let currentMandate = { ...mandate };
+      
+      // If tampering signature, we modify the payload without regenerating the signature
+      if (attackType === 'signature_tamper') {
+        currentMandate.authorized_amount = 999999;
+      }
+
       const res = await fetch('/api/agents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: 'MERCHANT', mode, mandate })
+        body: JSON.stringify({ 
+          role: 'MERCHANT', 
+          mode: attackType === 'signature_tamper' || attackType === 'nonce_replay' ? 'valid' : mode, 
+          mandate: currentMandate,
+          attackType 
+        })
       });
       const responseJson = await res.json();
       
@@ -102,8 +115,8 @@ export default function Dashboard() {
       setMerchantTelemetry(responseJson.telemetry);
 
       const evaluation = await evaluateDiff(
-        mandate,
-        { sku: payload.sku, actual_amount: payload.actual_amount },
+        currentMandate,
+        { sku: payload.sku, actual_amount: payload.actual_amount, quantity: payload.quantity || 1 },
         signature,
         keys.publicKey
       );
@@ -117,9 +130,11 @@ export default function Dashboard() {
         triggerFlash('bg-red-500/20');
         setTrustScore(85);
       }
+      
+      setResultReason(evaluation.reason || null);
     } catch (e) {
       console.error(e);
-      setApiWarning('Critical network failure during fulfillment execution.');
+      setApiWarning('Critical network failure triggering fallback execution.');
     }
     setIsProcessing(false);
   };
@@ -229,15 +244,48 @@ export default function Dashboard() {
             >
               {isProcessing ? 'Generating...' : 'Submit Valid Fulfillment (Happy Path)'}
             </button>
-            <button 
-              onClick={() => handleMerchantSubmit('malicious')}
-              disabled={!mandate || isProcessing}
-              className="w-full py-3 px-4 bg-red-600 hover:bg-red-500 rounded-lg font-medium transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isProcessing ? 'Generating...' : 'Submit Malicious Fulfillment (Adversarial)'}
-            </button>
+            <div className="mt-4 border-t border-slate-800 pt-4">
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Adversarial Playground</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button 
+                  onClick={() => handleMerchantSubmit('malicious', 'fee_padding')}
+                  disabled={!mandate || isProcessing}
+                  className="w-full py-2 px-3 bg-red-900/60 hover:bg-red-800 border border-red-700/50 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                >
+                  1. Fee Padding (Amount Drift)
+                </button>
+                <button 
+                  onClick={() => handleMerchantSubmit('malicious', 'sku_swap')}
+                  disabled={!mandate || isProcessing}
+                  className="w-full py-2 px-3 bg-red-900/60 hover:bg-red-800 border border-red-700/50 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                >
+                  2. SKU Substitution
+                </button>
+                <button 
+                  onClick={() => handleMerchantSubmit('malicious', 'quantity_inflation')}
+                  disabled={!mandate || isProcessing}
+                  className="w-full py-2 px-3 bg-red-900/60 hover:bg-red-800 border border-red-700/50 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                >
+                  3. Quantity Inflation
+                </button>
+                <button 
+                  onClick={() => handleMerchantSubmit('malicious', 'signature_tamper')}
+                  disabled={!mandate || isProcessing}
+                  className="w-full py-2 px-3 bg-red-900/60 hover:bg-red-800 border border-red-700/50 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                >
+                  4. Tamper Payload (Bad Sig)
+                </button>
+                <button 
+                  onClick={() => handleMerchantSubmit('malicious', 'nonce_replay')}
+                  disabled={!mandate || isProcessing}
+                  className="w-full sm:col-span-2 py-2 px-3 bg-red-900/60 hover:bg-red-800 border border-red-700/50 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                >
+                  5. Replay Consumed Nonce
+                </button>
+              </div>
+            </div>
             <p className="text-xs text-neutral-500 mt-2 italic">
-              Defense Verification Fixture: This button generates an intentionally naive adversarial payload (padded fee) exclusively to evaluate and demonstrate policy engine rejection boundaries. It contains no offensive capabilities.
+              Defense Verification Fixture: These buttons generate intentionally adversarial payloads and cryptographic anomalies exclusively to evaluate and demonstrate policy engine rejection boundaries.
             </p>
           </div>
 
@@ -301,6 +349,11 @@ export default function Dashboard() {
                 ${status === 'RESOLVED' ? 'bg-blue-900/40 border-blue-500/50 text-blue-400' : ''}
               `}>
                 {status === 'FLAGGED' ? 'FLAGGED — AUTO REFUND' : status}
+                {status === 'FLAGGED' && resultReason && (
+                  <div className="text-xs font-normal mt-1 opacity-90 uppercase tracking-wider text-red-300">
+                    Reason: {resultReason.replace(/_/g, ' ')}
+                  </div>
+                )}
               </div>
             </div>
 

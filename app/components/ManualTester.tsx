@@ -1,19 +1,23 @@
 "use client";
 import React, { useState } from 'react';
 
+import { generateKeysAndSign } from '../actions';
+
 export default function ManualTester({ context }: { context?: 'main' | 'eval' }) {
   const [authorizedSku, setAuthorizedSku] = useState("Organic Apples");
   const [authorizedAmount, setAuthorizedAmount] = useState<string>("2000");
+  const [mandateQty, setMandateQty] = useState<string>("1");
   const [fulfilledSku, setFulfilledSku] = useState("Organic Apples (1kg)");
   const [fulfilledAmount, setFulfilledAmount] = useState<string>("2030");
+  const [actualQty, setActualQty] = useState<string>("1");
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
   const PRESETS: Record<string, any> = {
-    'Groceries': { authSku: "Organic Apples", authAmt: "2000", fullSku: "Organic Apples (1kg)", fullAmt: "2030" },
-    'Electronics': { authSku: "iPhone 15 Pro", authAmt: "120000", fullSku: "iPhone 15 Pro", fullAmt: "120150" },
-    'Fashion': { authSku: "Nike Air Force 1", authAmt: "8500", fullSku: "Nike Air Force 1", fullAmt: "8900" },
-    'Custom': { authSku: "Premium Coffee Beans", authAmt: "1200", fullSku: "Coffee Beans 250g", fullAmt: "1200" }
+    'Groceries': { authSku: "Organic Apples", authAmt: "2000", authQty: "1", fullSku: "Organic Apples (1kg)", fullAmt: "2030", fullQty: "1" },
+    'Electronics': { authSku: "iPhone 15 Pro", authAmt: "120000", authQty: "1", fullSku: "iPhone 15 Pro", fullAmt: "120150", fullQty: "1" },
+    'Fashion': { authSku: "Nike Air Force 1", authAmt: "8500", authQty: "1", fullSku: "Nike Air Force 1", fullAmt: "8900", fullQty: "1" },
+    'Custom': { authSku: "Premium Coffee Beans", authAmt: "1200", authQty: "1", fullSku: "Coffee Beans 250g", fullAmt: "1200", fullQty: "1" }
   };
 
   const handlePresetChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -21,20 +25,30 @@ export default function ManualTester({ context }: { context?: 'main' | 'eval' })
     if (preset) {
       setAuthorizedSku(preset.authSku);
       setAuthorizedAmount(preset.authAmt);
+      setMandateQty(preset.authQty);
       setFulfilledSku(preset.fullSku);
       setFulfilledAmount(preset.fullAmt);
+      setActualQty(preset.fullQty);
     }
   };
 
   async function handleEvaluate(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
+    
+    // Generate valid cryptographic signature for the arbitrary manual payload
+    const { augmentedPayload, signature, verificationBundle } = await generateKeysAndSign({
+      sku: authorizedSku,
+      authorized_amount: Number(authorizedAmount),
+      quantity: Number(mandateQty)
+    });
+
     const res = await fetch('/api/verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        mandate: { sku: authorizedSku, authorized_amount: Number(authorizedAmount), quantity: 1 },
-        fulfillment: { sku: fulfilledSku, actual_amount: Number(fulfilledAmount), quantity: 1 }
+        mandate: { ...augmentedPayload, signature, publicKeyPem: verificationBundle.publicKeyPem },
+        fulfillment: { sku: fulfilledSku, actual_amount: Number(fulfilledAmount), quantity: Number(actualQty) }
       })
     });
     const data = await res.json();
@@ -65,9 +79,15 @@ export default function ManualTester({ context }: { context?: 'main' | 'eval' })
         )}
       </p>
       <form onSubmit={handleEvaluate} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Authorized SKU</label>
-          <input className="w-full bg-slate-950 border border-slate-700 p-2 rounded text-slate-200 focus:outline-none focus:border-purple-500 transition-colors" value={authorizedSku} onChange={e => setAuthorizedSku(e.target.value)} />
+        <div className="grid grid-cols-12 gap-4">
+          <div className="col-span-8">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Authorized SKU</label>
+            <input className="w-full bg-slate-950 border border-slate-700 p-2 rounded text-slate-200 focus:outline-none focus:border-purple-500 transition-colors" value={authorizedSku} onChange={e => setAuthorizedSku(e.target.value)} />
+          </div>
+          <div className="col-span-4">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Qty</label>
+            <input type="text" inputMode="numeric" pattern="[0-9]*" className="w-full bg-slate-950 border border-slate-700 p-2 rounded text-slate-200 focus:outline-none focus:border-purple-500 transition-colors" value={mandateQty} onChange={e => setMandateQty(e.target.value.replace(/[^0-9]/g, ''))} />
+          </div>
         </div>
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Authorized Amount (&#8377;)</label>
@@ -76,9 +96,15 @@ export default function ManualTester({ context }: { context?: 'main' | 'eval' })
             setAuthorizedAmount(val);
           }} />
         </div>
-        <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Fulfilled SKU</label>
-          <input className="w-full bg-slate-950 border border-slate-700 p-2 rounded text-slate-200 focus:outline-none focus:border-purple-500 transition-colors" value={fulfilledSku} onChange={e => setFulfilledSku(e.target.value)} />
+        <div className="grid grid-cols-12 gap-4">
+          <div className="col-span-8">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Fulfilled SKU</label>
+            <input className="w-full bg-slate-950 border border-slate-700 p-2 rounded text-slate-200 focus:outline-none focus:border-purple-500 transition-colors" value={fulfilledSku} onChange={e => setFulfilledSku(e.target.value)} />
+          </div>
+          <div className="col-span-4">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Qty</label>
+            <input type="text" inputMode="numeric" pattern="[0-9]*" className="w-full bg-slate-950 border border-slate-700 p-2 rounded text-slate-200 focus:outline-none focus:border-purple-500 transition-colors" value={actualQty} onChange={e => setActualQty(e.target.value.replace(/[^0-9]/g, ''))} />
+          </div>
         </div>
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Fulfilled Amount (&#8377;)</label>
