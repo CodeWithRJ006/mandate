@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import crypto from 'crypto';
 import stringSimilarity from 'string-similarity';
+import { POLICY_CONFIG } from './config';
 
 export interface AgentKeys {
   publicKey: string;
@@ -35,7 +36,7 @@ export function deterministicStringify(obj: any): string {
 export function signMandate(payload: Record<string, any>, privateKeyPem: string): { augmentedPayload: any; signature: string; canonicalString: string } {
   const augmentedPayload = {
     nonce: crypto.randomUUID(),
-    expiry: Date.now() + 24 * 60 * 60 * 1000, // + 24 hours
+    expiry: Date.now() + POLICY_CONFIG.mandateTtlMs,
     ...payload,
   };
 
@@ -126,8 +127,8 @@ export function evaluateFulfillment(
   const auth_total = mandate.authorized_amount * mandateQty;
   const actual_total = fulfillment.actual_amount * fulfillmentQty;
 
-  const tol = config.tolerancePct ?? 0.02;
-  const sim = config.similarityThreshold ?? 0.80;
+  const tol = config.tolerancePct ?? POLICY_CONFIG.tolerancePct;
+  const sim = config.similarityThreshold ?? POLICY_CONFIG.similarityThreshold;
 
   const maxAllowedAmount = auth_total * (1 + tol);
   if (actual_total > maxAllowedAmount) {

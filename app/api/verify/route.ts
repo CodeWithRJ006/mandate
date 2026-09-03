@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { evaluateFulfillment, verifyMandate } from '@/lib/uap-logic';
 import stringSimilarity from 'string-similarity';
+import { POLICY_CONFIG } from '@/lib/config';
+import { globalLedger } from '@/lib/ledger';
 
 export async function POST(req: Request) {
   try {
@@ -14,6 +16,7 @@ export async function POST(req: Request) {
     
     const verification = verifyMandate(pureMandate, signature, publicKeyPem);
     if (!verification.isValid) {
+      globalLedger.addBlock(pureMandate.nonce || 'UNKNOWN', 'REJECTED', verification.reason || 'SIGNATURE_INVALID');
       return NextResponse.json({ error: verification.reason || 'SIGNATURE_INVALID' }, { status: 403 });
     }
 
@@ -27,7 +30,8 @@ export async function POST(req: Request) {
       fulfillment.sku || ""
     );
 
-    const result = evaluateFulfillment(pureMandate, fulfillment, { tolerancePct: 0.02, similarityThreshold: 0.60 });
+    const result = evaluateFulfillment(pureMandate, fulfillment, POLICY_CONFIG);
+    globalLedger.addBlock(pureMandate.nonce, result.status, result.reason || null);
 
     return NextResponse.json({
       verdict: result.status,

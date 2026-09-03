@@ -2,6 +2,7 @@
 'use server';
 
 import { generateAgentKeyPair, signMandate, verifyMandate, evaluateFulfillment, MandateContext, FulfillmentContext } from '../lib/uap-logic';
+import { globalLedger } from '../lib/ledger';
 
 export interface AgentExecutionTelemetry {
   systemPrompt: string;
@@ -49,7 +50,24 @@ export async function verifySignatureAction(payload: Record<string, any>, signat
 export async function evaluateDiff(mandate: any, fulfillment: any, signature: string, publicKeyPem: string) {
   const verification = verifyMandate(mandate, signature, publicKeyPem);
   if (!verification.isValid) {
-    return { status: 'REJECTED', reason: verification.reason || 'SIGNATURE_INVALID' };
+    const res = { status: 'REJECTED', reason: verification.reason || 'SIGNATURE_INVALID' };
+    globalLedger.addBlock(mandate.nonce || 'UNKNOWN_NONCE', res.status, res.reason);
+    return res;
   }
-  return evaluateFulfillment(mandate, fulfillment);
+  const evalResult = evaluateFulfillment(mandate, fulfillment);
+  globalLedger.addBlock(mandate.nonce, evalResult.status, evalResult.reason || null);
+  return evalResult;
+}
+
+export async function getLedgerChain() {
+  return globalLedger.getChain();
+}
+
+export async function tamperLedgerAction(index: number, newVerdict: string) {
+  globalLedger.tamperWithBlock(index, newVerdict);
+  return globalLedger.getChain();
+}
+
+export async function verifyLedgerAction() {
+  return globalLedger.verifyChainIntegrity();
 }

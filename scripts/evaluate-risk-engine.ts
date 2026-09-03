@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import stringSimilarity from 'string-similarity';
 import { generateAgentKeyPair, signMandate, verifyMandate, evaluateFulfillment, nonceStore } from '../lib/uap-logic';
+import { POLICY_CONFIG } from '../lib/config';
 
 export type ExpectedOutcome = "APPROVE" | "REJECT";
 export type RejectReason = 
@@ -273,7 +274,7 @@ export function runEvaluation() {
       resultStatus = 'REJECTED';
       reason = verifyRes.reason || 'VERIFY_FAILED';
     } else {
-      const evalRes = evaluateFulfillment(pureMandate as any, tc.fulfillment as any, { tolerancePct: 0.02, similarityThreshold: 0.60 });
+      const evalRes = evaluateFulfillment(pureMandate as any, tc.fulfillment as any, POLICY_CONFIG);
       resultStatus = evalRes.status;
       reason = evalRes.reason || '';
     }
@@ -329,7 +330,7 @@ if (typeof process !== 'undefined' && process.argv.some(arg => arg.endsWith('eva
   );
 
   console.log(`\n--- 2. HELD-OUT TEST SET RESULTS (${HELD_OUT_SET.length} Cases) ---`);
-  console.log(`Baseline Evaluated At: Tolerance = 2%, Similarity = 0.60\n`);
+  console.log(`Baseline Evaluated At: Tolerance = ${(POLICY_CONFIG.tolerancePct * 100).toFixed(0)}%, Similarity = ${POLICY_CONFIG.similarityThreshold}\n`);
   
   console.table({
     "True Positives (Blocked)": data.matrix.TP,

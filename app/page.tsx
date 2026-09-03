@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { generateKeysAndSign, evaluateDiff, AgentExecutionTelemetry, MandateVerificationBundle } from './actions';
 import EvidenceDrawer from './components/EvidenceDrawer';
 import ManualTester from './components/ManualTester';
+import LedgerViewer from './components/LedgerViewer';
 
 export default function Dashboard() {
   // User State
@@ -402,6 +403,7 @@ export default function Dashboard() {
       
       <div className="max-w-7xl mx-auto px-8 pb-8">
         <ManualTester context="main" />
+        <LedgerViewer />
       </div>
     </div>
   );

@@ -125,7 +125,7 @@ curl -X POST https://razorpay-uap-recourse.vercel.app/api/verify \
 
 ## What's Real vs. Simulated
 
-- **Real:** Llama 3.3 70B inference via Groq (zero-cost, model-agnostic architecture), real ECDSA prime256v1 cryptography (sign/verify), semantic string diffing (>0.80 tolerance), and percentage-based amount tolerances (<= 2%).
+- **Real:** Llama 3.3 70B inference via Groq (zero-cost, model-agnostic architecture), real ECDSA prime256v1 cryptography (sign/verify), semantic string diffing (>0.60 tolerance), and percentage-based amount tolerances (<= 2%).
 - **Simulated:** Bank settlement rails, and adversarial merchant prompting (forced for demo purposes).
 
 ## Hackathon Compliance Disclaimer
