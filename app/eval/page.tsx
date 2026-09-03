@@ -6,8 +6,15 @@ import ManualTester from '../components/ManualTester';
 import stringSimilarity from 'string-similarity';
 
 export default function EvalDashboard() {
+  interface TestCase {
+    name: string;
+    expectedOutcome: string;
+    expectedReason: string | null;
+    mandate: Record<string, unknown>;
+    fulfillment: Record<string, unknown>;
+  }
   interface EvalData {
-    rawDataset: any[];
+    rawDataset: TestCase[];
     matrix: { TP: number, FP: number, TN: number, FN: number };
     metrics: { precision: number, recall: number, f1: number, fpr: number };
   }
