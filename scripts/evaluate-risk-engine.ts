@@ -217,8 +217,10 @@ export const HELD_OUT_SET = HELD_OUT_SET_RAW;
 export function runEvaluation() {
   // --- 1. TUNING SET SWEEP ---
   const tuningSweep = [];
-  const tolerances = [0.01, 0.02, 0.03, 0.04, 0.05];
-  const similarities = [0.95, 0.90, 0.85, 0.80, 0.75, 0.70, 0.65, 0.60, 0.55, 0.50, 0.45, 0.40];
+  const baseTol = POLICY_CONFIG.tolerancePct;
+  const baseSim = POLICY_CONFIG.similarityThreshold;
+  const tolerances = [baseTol - 0.01, baseTol, baseTol + 0.01, baseTol + 0.02, baseTol + 0.03].filter(t => t > 0);
+  const similarities = [baseSim + 0.35, baseSim + 0.30, baseSim + 0.25, baseSim + 0.20, baseSim + 0.15, baseSim + 0.10, baseSim + 0.05, baseSim, baseSim - 0.05, baseSim - 0.10, baseSim - 0.15, baseSim - 0.20].filter(s => s > 0 && s <= 1);
 
   for (const tol of tolerances) {
     for (const sim of similarities) {
@@ -255,7 +257,7 @@ export function runEvaluation() {
     }
   }
 
-  // --- 2. HELD OUT SET EVALUATION (Baseline: 0.02, 0.85) ---
+  // --- 2. HELD OUT SET EVALUATION (Live Baseline) ---
   let TP = 0, FP = 0, TN = 0, FN = 0;
   const results = [];
 

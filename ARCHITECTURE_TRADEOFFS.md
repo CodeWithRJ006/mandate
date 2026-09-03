@@ -1,4 +1,4 @@
-# Architecture Tradeoffs & Production Scalability 🚀
+# Architecture Tradeoffs & Production Scalability
 
 This document outlines the design decisions made for the Razorpay UAP Recourse Layer prototype and how the architecture must evolve to support enterprise-grade production scale, security, and regulatory compliance.
 
@@ -11,7 +11,7 @@ This document outlines the design decisions made for the Razorpay UAP Recourse L
 - **Production Evolution:** Key generation and signing operations must be delegated to enterprise **Hardware Security Modules (HSMs)** or managed services like **AWS KMS / Google Cloud KMS**. All data at rest must utilize strict **envelope encryption** to protect the master keys and prevent extraction.
 
 ## 3. Reconciliation & Diff Engine
-- **Prototype:** Relies on the Sørensen–Dice coefficient (`string-similarity`) enforcing a static `>0.85` threshold alongside a static `2%` hardcoded price tolerance.
+- **Prototype:** Relies on the Sørensen-Dice coefficient (`string-similarity`) enforcing a tuned `>0.60` threshold alongside a `2.0%` price tolerance defined in a centralized `POLICY_CONFIG`.
 - **Production Evolution:** Will transition to a fine-tuned **vector embedding model** operating within a low-latency **WebAssembly (Wasm)** or dedicated microservice sandbox. This engine will feature **dynamic, merchant-configurable tolerance matrices**, allowing variable logic based on product categories, temporal pricing, and merchant-specific risk profiles.
 
 ## 4. Resilience & High-Throughput Pipelines
