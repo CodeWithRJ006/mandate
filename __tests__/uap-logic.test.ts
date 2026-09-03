@@ -126,5 +126,51 @@ describe('UAP Logic (ECDSA and Risk Engine)', () => {
       expect(maliciousEval.status).toBe('REJECTED');
       expect(maliciousEval.reason).toBe('AMOUNT_EXCEEDED');
     });
+
+    it('evaluateFulfillment rejects quantity=0 (nonsensical input)', () => {
+      const evalRes = evaluateFulfillment(
+        { sku: 'Apples', authorized_amount: 100, quantity: 1 },
+        { sku: 'Apples', actual_amount: 0, quantity: 0 },
+        POLICY_CONFIG
+      );
+      // quantity 0 vs 1 is a mismatch; amount 0 vs 100 is a massive underpayment or fraud signal
+      expect(evalRes.status).toBe('REJECTED');
+    });
+
+    it('evaluateFulfillment approves at exactly the 2.0% tolerance boundary', () => {
+      const evalRes = evaluateFulfillment(
+        { sku: 'Apples', authorized_amount: 1000 },
+        { sku: 'Apples', actual_amount: 1020 }, // exactly 2.0%
+        POLICY_CONFIG
+      );
+      expect(evalRes.status).toBe('APPROVED');
+    });
+
+    it('evaluateFulfillment rejects at 2.01% (just over tolerance boundary)', () => {
+      const evalRes = evaluateFulfillment(
+        { sku: 'Apples', authorized_amount: 10000 },
+        { sku: 'Apples', actual_amount: 10201 }, // 2.01%
+        POLICY_CONFIG
+      );
+      expect(evalRes.status).toBe('REJECTED');
+      expect(evalRes.reason).toBe('AMOUNT_EXCEEDED');
+    });
+
+    it('evaluateFulfillment approves identical SKU and amount (perfect match)', () => {
+      const evalRes = evaluateFulfillment(
+        { sku: 'Organic Apples 1kg', authorized_amount: 500 },
+        { sku: 'Organic Apples 1kg', actual_amount: 500 },
+        POLICY_CONFIG
+      );
+      expect(evalRes.status).toBe('APPROVED');
+    });
+
+    it('evaluateFulfillment handles empty SKU gracefully without throwing', () => {
+      expect(() => evaluateFulfillment(
+        { sku: '', authorized_amount: 100 },
+        { sku: '', actual_amount: 100 },
+        POLICY_CONFIG
+      )).not.toThrow();
+    });
   });
 });

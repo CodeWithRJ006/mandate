@@ -106,8 +106,8 @@ export function evaluateFulfillment(
   fulfillment: FulfillmentContext,
   config: PolicyConfig = {}
 ): EvaluationResult {
-  const mandateQty = mandate.quantity || 1;
-  const fulfillmentQty = fulfillment.quantity || 1;
+  const mandateQty = mandate.quantity ?? 1;
+  const fulfillmentQty = fulfillment.quantity ?? 1;
   
   if (mandateQty !== fulfillmentQty) {
     return { status: 'REJECTED', reason: 'QUANTITY_MISMATCH' };

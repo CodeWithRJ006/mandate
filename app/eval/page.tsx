@@ -8,10 +8,13 @@ import stringSimilarity from 'string-similarity';
 export default function EvalDashboard() {
   interface TestCase {
     name: string;
+    description: string;
+    category: string;
+    expected: string;
     expectedOutcome: string;
     expectedReason: string | null;
-    mandate: Record<string, unknown>;
-    fulfillment: Record<string, unknown>;
+    mandate: { authorized_amount: number; quantity?: number; sku: string; [key: string]: unknown };
+    fulfillment: { actual_amount: number; quantity?: number; sku: string; [key: string]: unknown };
   }
   interface EvalData {
     rawDataset: TestCase[];

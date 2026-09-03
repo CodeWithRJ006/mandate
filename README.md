@@ -34,7 +34,21 @@ sequenceDiagram
 
 To prove non-repudiation, the system maintains a real, in-memory SHA-256 hash-chain ledger of all transactions (`lib/ledger.ts`). Every evaluation automatically commits a block containing the `verdict`, `nonce`, and `prevHash`. The live UI dynamically polls this chain to verify integrity. You can intentionally corrupt a block in the UI to watch the chain break. 
 
-*(Note: For the live Vercel deployment of this demo, this ledger is intentionally ephemeral—because Vercel Serverless Functions spin down between cold starts, the in-memory global ledger resets. In a production environment, this would be backed by a persistent data store or Kafka topic.)*
+> [!NOTE]
+> **Ephemerality (by design):** For the live Vercel demo, both the hash-chain ledger and the nonce replay guard (`lib/uap-logic.ts` — in-memory `Set`) reset on Vercel cold-starts. This is intentional — the demo is a proof-of-concept. In a production environment, the ledger would be backed by a persistent data store (PostgreSQL, DynamoDB) and the nonce store would use Redis with a TTL matching the 24-hour mandate expiry window.
+
+## Fallback Instructions (if live demo is unavailable)
+
+If the Vercel deployment is slow or unavailable (cold start, rate limit), the entire system can be demonstrated locally:
+
+```bash
+git clone https://github.com/CodeWithRJ006/razorpay-uap-recourse.git
+cd razorpay-uap-recourse
+npm install
+npm run dev  # Starts at http://localhost:3000
+```
+
+The mock fallback (`GROQ_API_KEY` not required) will activate automatically, keeping the full UI and all adversarial demo paths functional without any external API dependency.
 
 ## Setup Instructions
 

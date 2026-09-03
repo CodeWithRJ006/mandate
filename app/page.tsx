@@ -250,8 +250,11 @@ export default function Dashboard() {
             >
               {isProcessing ? 'Generating...' : 'Submit Valid Fulfillment (Happy Path)'}
             </button>
-            <div className="mt-4 border-t border-slate-800 pt-4">
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Adversarial Playground</p>
+              <div className="mt-4 border-t border-slate-800 pt-4">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Adversarial Playground</p>
+                <p className="text-xs text-slate-600 italic mb-2">
+                  {!mandate ? '⚠ Generate a Mandate above first, then trigger an attack below.' : '✓ Mandate active — select an attack vector to verify policy engine rejection.'}
+                </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <button 
                   onClick={() => handleMerchantSubmit('malicious', 'fee_padding')}
