@@ -1,65 +1,130 @@
-import { generateAgentKeyPair, signMandate, verifyMandate, evaluateFulfillment } from '../lib/uap-logic';
-import assert from 'assert';
+import { generateAgentKeyPair, signMandate, verifyMandate, evaluateFulfillment, nonceStore } from '../lib/uap-logic';
+import { POLICY_CONFIG } from '../lib/config';
 
-async function runTests() {
-  console.log('--- Running Tests for UAP Logic (ECDSA) ---');
-  let exitCode = 0;
+describe('UAP Logic (ECDSA and Risk Engine)', () => {
+  let keys: { publicKey: string; privateKey: string };
 
-  try {
-    // 1. Generate keys
-    const keys = generateAgentKeyPair();
-    assert.ok(keys.publicKey.includes('BEGIN PUBLIC KEY'), 'Public key should be PEM');
-    assert.ok(keys.privateKey.includes('BEGIN PRIVATE KEY'), 'Private key should be PEM');
+  beforeAll(() => {
+    keys = generateAgentKeyPair();
+  });
+
+  describe('Cryptographic Signature Gating (P0)', () => {
+    it('generates valid PEM keys', () => {
+      expect(keys.publicKey).toContain('BEGIN PUBLIC KEY');
+      expect(keys.privateKey).toContain('BEGIN PRIVATE KEY');
+    });
+
+    it('verifyMandate returns true for valid ECDSA signatures', () => {
+      const payload = { sku: 'Organic Apples', authorized_amount: 2000 };
+      const { augmentedPayload, signature } = signMandate(payload, keys.privateKey);
+      
+      const verification = verifyMandate(augmentedPayload, signature, keys.publicKey);
+      expect(verification.isValid).toBe(true);
+    });
+
+    it('verifyMandate returns false for a tampered payload (403 SIGNATURE_INVALID)', () => {
+      const payload = { sku: 'Organic Apples', authorized_amount: 2000 };
+      const { augmentedPayload, signature } = signMandate(payload, keys.privateKey);
+      
+      const tamperedPayload = { ...augmentedPayload, authorized_amount: 3000 };
+      const verification = verifyMandate(tamperedPayload, signature, keys.publicKey);
+      
+      expect(verification.isValid).toBe(false);
+      expect(verification.reason).toBe('SIGNATURE_INVALID');
+    });
+
+    it('verifyMandate returns false for an empty or invalid signature format (401 CRYPTOGRAPHIC_SIGNATURE_REQUIRED)', () => {
+      const payload = { sku: 'Organic Apples', authorized_amount: 2000 };
+      const { augmentedPayload } = signMandate(payload, keys.privateKey);
+      
+      const verification = verifyMandate(augmentedPayload, '', keys.publicKey);
+      expect(verification.isValid).toBe(false);
+      expect(verification.reason).toBe('SIGNATURE_INVALID');
+    });
+
+    it('verifyMandate rejects expired mandates', () => {
+      const payload = { sku: 'Organic Apples', authorized_amount: 2000 };
+      const { augmentedPayload, signature } = signMandate(payload, keys.privateKey);
+      
+      // Tamper with expiry (must fail signature check)
+      const tamperedPayload = { ...augmentedPayload, expiry: Date.now() - 10000 };
+      const verification = verifyMandate(tamperedPayload, signature, keys.publicKey);
+      expect(verification.isValid).toBe(false);
+      expect(verification.reason).toBe('MANDATE_EXPIRED');
+    });
     
-    // Test 1: verifyMandate returns true for valid ECDSA signatures and false if tampered
-    const payload = { sku: 'Organic Apples', authorized_amount: 2000 };
-    const { augmentedPayload, signature } = signMandate(payload, keys.privateKey);
-    const isValid = verifyMandate(augmentedPayload, signature, keys.publicKey);
-    assert.strictEqual(isValid.isValid, true, 'ECDSA signature should verify');
-    
-    const tamperedPayload = { ...augmentedPayload, authorized_amount: 3000 };
-    const isTamperedValid = verifyMandate(tamperedPayload, signature, keys.publicKey);
-    assert.strictEqual(isTamperedValid.isValid, false, 'Tampered payload should fail verification');
-    console.log('✅ Test 1 Passed: verifyMandate handles valid and tampered ECDSA signatures.');
+    it('verifyMandate catches nonce reuse (Replay Attacks)', () => {
+      const payload = { sku: 'Organic Apples', authorized_amount: 2000 };
+      const { augmentedPayload, signature } = signMandate(payload, keys.privateKey);
+      
+      // First verification consumes the nonce
+      const firstCheck = verifyMandate(augmentedPayload, signature, keys.publicKey);
+      expect(firstCheck.isValid).toBe(true);
+      
+      // Second verification rejects it
+      const secondCheck = verifyMandate(augmentedPayload, signature, keys.publicKey);
+      expect(secondCheck.isValid).toBe(false);
+      expect(secondCheck.reason).toBe('NONCE_REUSED');
+    });
+  });
 
-    // Test 2: evaluateFulfillment accepts minor SKU typos
-    const typoEval = evaluateFulfillment(
-      { sku: 'Apples', authorized_amount: 100 },
-      { sku: 'Apple', actual_amount: 100 }
-    );
-    assert.strictEqual(typoEval.status, 'APPROVED', 'Minor typo ("Apples" vs "Apple") should be accepted');
-    console.log('✅ Test 2 Passed: evaluateFulfillment accepts minor SKU typos (>0.85).');
+  describe('Semantic and Financial Policy Engine', () => {
+    it('evaluateFulfillment accepts minor SKU typos', () => {
+      const evalRes = evaluateFulfillment(
+        { sku: 'Apples', authorized_amount: 100 },
+        { sku: 'Apple', actual_amount: 100 },
+        POLICY_CONFIG
+      );
+      expect(evalRes.status).toBe('APPROVED');
+    });
 
-    // Test 3: evaluateFulfillment accepts a 1% price variance but rejects a 5% price variance
-    const variance1Percent = evaluateFulfillment(
-      { sku: 'Apples', authorized_amount: 100 },
-      { sku: 'Apples', actual_amount: 101 } // 1% diff
-    );
-    assert.strictEqual(variance1Percent.status, 'APPROVED', 'Should accept 1% price variance');
+    it('evaluateFulfillment rejects completely different SKUs (SKU substitution)', () => {
+      const evalRes = evaluateFulfillment(
+        { sku: 'Apples', authorized_amount: 100 },
+        { sku: 'Oranges', actual_amount: 100 },
+        POLICY_CONFIG
+      );
+      expect(evalRes.status).toBe('REJECTED');
+      expect(evalRes.reason).toBe('SKU_MISMATCH');
+    });
 
-    const variance5Percent = evaluateFulfillment(
-      { sku: 'Apples', authorized_amount: 100 },
-      { sku: 'Apples', actual_amount: 105 } // 5% diff
-    );
-    assert.strictEqual(variance5Percent.status, 'REJECTED', 'Should reject 5% price variance');
-    assert.strictEqual(variance5Percent.reason, 'AMOUNT_EXCEEDED', 'Reason should be AMOUNT_EXCEEDED');
-    console.log('✅ Test 3 Passed: evaluateFulfillment enforces <= 2% tolerance (1% accepted, 5% rejected).');
+    it('evaluateFulfillment enforces quantity constraints', () => {
+      const evalRes = evaluateFulfillment(
+        { sku: 'Apples', authorized_amount: 100, quantity: 1 },
+        { sku: 'Apples', actual_amount: 100, quantity: 2 },
+        POLICY_CONFIG
+      );
+      expect(evalRes.status).toBe('REJECTED');
+      expect(evalRes.reason).toBe('QUANTITY_MISMATCH');
+    });
 
-    // Test 4: evaluateFulfillment rejects malicious payloads (hidden fees)
-    const maliciousEval = evaluateFulfillment(
-      { sku: 'Organic Apples', authorized_amount: 2000 },
-      { sku: 'Organic Apples', actual_amount: 2150 } // 150 INR hidden fee (7.5% diff)
-    );
-    assert.strictEqual(maliciousEval.status, 'REJECTED', 'Should reject malicious padding');
-    assert.strictEqual(maliciousEval.reason, 'AMOUNT_EXCEEDED', 'Reason should be AMOUNT_EXCEEDED');
-    console.log('✅ Test 4 Passed: evaluateFulfillment accurately rejects malicious payloads.');
+    it('evaluateFulfillment accepts a 1% price variance (within tolerance)', () => {
+      const evalRes = evaluateFulfillment(
+        { sku: 'Apples', authorized_amount: 100 },
+        { sku: 'Apples', actual_amount: 101 }, // 1% diff
+        POLICY_CONFIG
+      );
+      expect(evalRes.status).toBe('APPROVED');
+    });
 
-  } catch (error) {
-    console.error('❌ Test failed:', error);
-    exitCode = 1;
-  }
+    it('evaluateFulfillment rejects a 5% price variance (exceeds tolerance)', () => {
+      const evalRes = evaluateFulfillment(
+        { sku: 'Apples', authorized_amount: 100 },
+        { sku: 'Apples', actual_amount: 105 }, // 5% diff
+        POLICY_CONFIG
+      );
+      expect(evalRes.status).toBe('REJECTED');
+      expect(evalRes.reason).toBe('AMOUNT_EXCEEDED');
+    });
 
-  process.exit(exitCode);
-}
-
-runTests();
+    it('evaluateFulfillment accurately rejects malicious payloads (hidden fee padding)', () => {
+      const maliciousEval = evaluateFulfillment(
+        { sku: 'Organic Apples', authorized_amount: 2000 },
+        { sku: 'Organic Apples', actual_amount: 2150 }, // 150 INR hidden fee (7.5% diff)
+        POLICY_CONFIG
+      );
+      expect(maliciousEval.status).toBe('REJECTED');
+      expect(maliciousEval.reason).toBe('AMOUNT_EXCEEDED');
+    });
+  });
+});
