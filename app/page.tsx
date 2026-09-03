@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { generateKeysAndSign, evaluateDiff, AgentExecutionTelemetry, MandateVerificationBundle } from './actions';
+import { generateKeysAndSign, evaluateDiff, tamperMandateExpiryAction, AgentExecutionTelemetry, MandateVerificationBundle } from './actions';
 import EvidenceDrawer from './components/EvidenceDrawer';
 import ManualTester from './components/ManualTester';
 import LedgerViewer from './components/LedgerViewer';
@@ -36,6 +36,7 @@ export default function Dashboard() {
     setTimeout(() => setFlashColor(''), 1000);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleCopyCommand = () => {
     if (!verificationBundle) return;
     const escapedPem = verificationBundle.publicKeyPem.replace(/\n/g, '\\n');
@@ -88,11 +89,15 @@ export default function Dashboard() {
     setApiWarning('');
 
     try {
-      const currentMandate = { ...mandate };
+      let currentMandate = { ...mandate };
+      let currentSignature = signature;
       
-      // If tampering signature, we modify the payload without regenerating the signature
       if (attackType === 'signature_tamper') {
         currentMandate.authorized_amount = 999999;
+      } else if (attackType === 'expired_mandate') {
+        const result = await tamperMandateExpiryAction(mandate, keys.privateKey);
+        currentMandate = result.augmentedPayload;
+        currentSignature = result.signature;
       }
 
       const res = await fetch('/api/agents', {
@@ -100,7 +105,7 @@ export default function Dashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           role: 'MERCHANT', 
-          mode: attackType === 'signature_tamper' || attackType === 'nonce_replay' ? 'valid' : mode, 
+          mode: ['signature_tamper', 'nonce_replay', 'expired_mandate'].includes(attackType || '') ? 'valid' : mode, 
           mandate: currentMandate,
           attackType 
         })
@@ -118,7 +123,7 @@ export default function Dashboard() {
       const evaluation = await evaluateDiff(
         currentMandate,
         { sku: payload.sku, actual_amount: payload.actual_amount, quantity: payload.quantity || 1 },
-        signature,
+        currentSignature,
         keys.publicKey
       );
 
@@ -276,13 +281,20 @@ export default function Dashboard() {
                 >
                   4. Tamper Payload (Bad Sig)
                 </button>
-                <button 
-                  onClick={() => handleMerchantSubmit('malicious', 'nonce_replay')}
-                  disabled={!mandate || isProcessing}
-                  className="w-full sm:col-span-2 py-2 px-3 bg-red-900/60 hover:bg-red-800 border border-red-700/50 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-                >
-                  5. Replay Consumed Nonce
-                </button>
+                  <button 
+                    onClick={() => handleMerchantSubmit('malicious', 'nonce_replay')}
+                    disabled={!mandate || isProcessing}
+                    className="w-full py-2 px-3 bg-red-900/60 hover:bg-red-800 border border-red-700/50 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                  >
+                    5. Replay Consumed Nonce
+                  </button>
+                  <button 
+                    onClick={() => handleMerchantSubmit('malicious', 'expired_mandate')}
+                    disabled={!mandate || isProcessing}
+                    className="w-full py-2 px-3 bg-red-900/60 hover:bg-red-800 border border-red-700/50 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                  >
+                    6. Submit Expired Mandate
+                  </button>
               </div>
             </div>
             <p className="text-xs text-neutral-500 mt-2 italic">

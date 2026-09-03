@@ -30,6 +30,12 @@ sequenceDiagram
     end
 ```
 
+## Cryptographic Audit Ledger
+
+To prove non-repudiation, the system maintains a real, in-memory SHA-256 hash-chain ledger of all transactions (`lib/ledger.ts`). Every evaluation automatically commits a block containing the `verdict`, `nonce`, and `prevHash`. The live UI dynamically polls this chain to verify integrity. You can intentionally corrupt a block in the UI to watch the chain break. 
+
+*(Note: For the live Vercel deployment of this demo, this ledger is intentionally ephemeral—because Vercel Serverless Functions spin down between cold starts, the in-memory global ledger resets. In a production environment, this would be backed by a persistent data store or Kafka topic.)*
+
 ## Setup Instructions
 
 1. Clone the repository and install dependencies:

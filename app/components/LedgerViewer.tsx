@@ -1,19 +1,17 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { getLedgerChain, tamperLedgerAction, verifyLedgerAction } from '../actions';
+import type { LedgerBlock } from '../../lib/ledger';
 
 export default function LedgerViewer() {
-  const [chain, setChain] = useState<any[]>([]);
+  const [chain, setChain] = useState<LedgerBlock[]>([]);
   const [integrity, setIntegrity] = useState<{ isValid: boolean; corruptedBlockIndex?: number }>({ isValid: true });
-  const [refreshing, setRefreshing] = useState(false);
 
   const fetchLedger = async () => {
-    setRefreshing(true);
     const data = await getLedgerChain();
     const int = await verifyLedgerAction();
     setChain(data);
     setIntegrity(int);
-    setRefreshing(false);
   };
 
   useEffect(() => {

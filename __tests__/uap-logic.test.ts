@@ -1,4 +1,4 @@
-import { generateAgentKeyPair, signMandate, verifyMandate, evaluateFulfillment, nonceStore } from '../lib/uap-logic';
+import { generateAgentKeyPair, signMandate, verifyMandate, evaluateFulfillment } from '../lib/uap-logic';
 import { POLICY_CONFIG } from '../lib/config';
 
 describe('UAP Logic (ECDSA and Risk Engine)', () => {

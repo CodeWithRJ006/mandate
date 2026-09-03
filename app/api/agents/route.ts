@@ -108,7 +108,7 @@ export async function POST(req: Request) {
             retriesUsed: attempts
           }
         });
-      } catch (e) {
+      } catch {
         return generateMockResponse(mockIntent, sysPrompt, 'Generate intent mandate', 1);
       }
     }
@@ -134,7 +134,7 @@ export async function POST(req: Request) {
             retriesUsed: attempts
           }
         });
-      } catch (e) {
+      } catch {
         return generateMockResponse(mode === 'malicious' ? mockFulfillmentMalicious : mockFulfillmentValid, systemPrompt, 'Generate fulfillment', 1);
       }
     }

@@ -45,7 +45,7 @@ class Ledger {
 
   public addBlock(nonce: string, verdict: string, reason: string | null): LedgerBlock {
     const prevBlock = this.getLatestBlock();
-    const newBlock: any = {
+    const newBlock: Omit<LedgerBlock, 'hash'> = {
       index: prevBlock.index + 1,
       timestamp: Date.now(),
       nonce,
@@ -53,9 +53,9 @@ class Ledger {
       reason,
       prevHash: prevBlock.hash
     };
-    newBlock.hash = this.calculateHash(newBlock);
-    this.chain.push(newBlock);
-    return newBlock;
+    const block: LedgerBlock = { ...newBlock, hash: this.calculateHash(newBlock) };
+    this.chain.push(block);
+    return block;
   }
 
   public verifyChainIntegrity(): { isValid: boolean; corruptedBlockIndex?: number } {

@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // One-off scripts and scratch files — not production code:
+    "scratch/**",
+    "scripts/evaluate-risk-engine.ts",
   ]),
 ]);
 

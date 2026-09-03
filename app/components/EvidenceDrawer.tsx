@@ -1,33 +1,40 @@
 "use client";
 import React, { useState } from 'react';
 
-export default function EvidenceDrawer({ mandateBundle }: { mandateBundle: any }) {
+interface MandateBundle {
+  payload: Record<string, unknown>;
+  publicKeyPem: string;
+  signature: string;
+  auditDecision: string;
+}
+
+export default function EvidenceDrawer({ mandateBundle }: { mandateBundle: MandateBundle | null }) {
   const [copied, setCopied] = useState(false);
 
   if (!mandateBundle) return null;
 
   // Exact command provided in the prompt
-  const terminalCommand = `node -e "const c=require('crypto');const v=c.createVerify('SHA256');v.update('${JSON.stringify(mandateBundle.payload)}');v.end();console.log('Signature Valid:',v.verify(\`${mandateBundle.publicKeyPem}\`,'${mandateBundle.signature}','base64'));"`;
+  const terminalCommand = `node -e "const c=require('crypto');const v=c.createVerify('SHA256');v.update('${JSON.stringify(mandateBundle!.payload)}');v.end();console.log('Signature Valid:',v.verify(\`${mandateBundle!.publicKeyPem}\`,'${mandateBundle!.signature}','base64'));"`;
 
   function downloadEvidencePack() {
     const pack = {
       protocol: "AP2-UAP-RECOURSE-v1",
       timestamp: new Date().toISOString(),
-      mandate: mandateBundle.payload,
+      mandate: mandateBundle!.payload,
       cryptography: {
         algorithm: "ECDSA_SHA256",
         curve: "prime256v1",
-        publicKeyPem: mandateBundle.publicKeyPem,
-        signature: mandateBundle.signature,
+        publicKeyPem: mandateBundle!.publicKeyPem,
+        signature: mandateBundle!.signature,
       },
-      auditDecision: mandateBundle.auditDecision,
-      verificationCommand: terminalCommand,
+      auditDecision: mandateBundle!.auditDecision,
+      terminalVerificationCommand: terminalCommand
     };
     const blob = new Blob([JSON.stringify(pack, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `evidence-pack-${mandateBundle.payload?.nonce || 'record'}.json`;
+    a.download = `evidence-pack-${(mandateBundle!.payload as Record<string, unknown>)?.nonce || 'record'}.json`;
     a.click();
     URL.revokeObjectURL(url);
   }

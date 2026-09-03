@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use server';
 
-import { generateAgentKeyPair, signMandate, verifyMandate, evaluateFulfillment, MandateContext, FulfillmentContext } from '../lib/uap-logic';
+import { generateAgentKeyPair, signMandate, verifyMandate, evaluateFulfillment } from '../lib/uap-logic';
 import { globalLedger } from '../lib/ledger';
 
 export interface AgentExecutionTelemetry {
@@ -41,6 +41,12 @@ export async function generateKeysAndSign(payload: Record<string, any>) {
     signature,
     verificationBundle
   };
+}
+
+export async function tamperMandateExpiryAction(payload: Record<string, unknown>, privateKeyPem: string) {
+  const expiredPayload = { ...payload, expiry: Date.now() - 10000 };
+  const { augmentedPayload, signature, canonicalString } = signMandate(expiredPayload, privateKeyPem);
+  return { augmentedPayload, signature, canonicalString };
 }
 
 export async function verifySignatureAction(payload: Record<string, any>, signature: string, publicKey: string) {

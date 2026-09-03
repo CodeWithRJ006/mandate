@@ -6,7 +6,12 @@ import ManualTester from '../components/ManualTester';
 import stringSimilarity from 'string-similarity';
 
 export default function EvalDashboard() {
-  const [data, setData] = useState<any>(null);
+  interface EvalData {
+    rawDataset: any[];
+    matrix: { TP: number, FP: number, TN: number, FN: number };
+    metrics: { precision: number, recall: number, f1: number, fpr: number };
+  }
+  const [data, setData] = useState<EvalData | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Interactive Sliders
@@ -179,13 +184,13 @@ export default function EvalDashboard() {
                 </ul>
                 <div className="border-t border-slate-800/50 pt-4 mt-4 text-slate-200">
                   <p className="mb-2">
-                    <strong className="text-purple-400">Offline 70% Tuning Phase:</strong> We explicitly prioritize <strong>100% Recall</strong> against unrecoverable financial loss. While our offline parameter sweep on the 70% Tuning Set suggested the threshold could be pushed as low as 0.45 before seeing a recall drop on that specific subset, doing so would be dangerously overfit. We know that adversarial product substitutions—such as the "iPhone 15 Pro" vs "iPhone 13 Mini" attack present in our 30% Held-Out set—score exactly 0.571. If we pushed the live threshold to 0.55, Recall would abruptly crash on the held-out set as that fraud slips through. Therefore, we rejected the 0.45 tuning minimum and anchored our live baseline at <strong>0.60</strong>. 
+                    <strong className="text-purple-400">Offline 70% Tuning Phase:</strong> We explicitly prioritize <strong>100% Recall</strong> against unrecoverable financial loss. While our offline parameter sweep on the 70% Tuning Set suggested the threshold could be pushed as low as 0.45 before seeing a recall drop on that specific subset, doing so would be dangerously overfit. We know that adversarial product substitutions—such as the &quot;iPhone 15 Pro&quot; vs &quot;iPhone 13 Mini&quot; attack present in our 30% Held-Out set—score exactly 0.571. If we pushed the live threshold to 0.55, Recall would abruptly crash on the held-out set as that fraud slips through. Therefore, we rejected the 0.45 tuning minimum and anchored our live baseline at <strong>0.60</strong>. 
                   </p>
                   <p className="mb-2">
                     This is the true safe floor: it maximizes authorized throughput (driving Tuning FPR down to 15.4%) while maintaining a rigorous safety margin against known adversarial mutations.
                   </p>
                   <p className="mb-2">
-                    <strong className="text-amber-400">The Tradeoff:</strong> The residual 15.4% Tuning FPR consists entirely of genuine semantic variants that character-level bigram algorithms cannot comprehend—such as "USB-C Cable 1m" vs "USB C Cable, 1 Meter" (which scores a dismal 0.538) or "Bluetooth Speaker" vs "BT Speaker" (0.461). We intentionally accept that these perfectly benign abbreviations will fall below the 0.60 threshold and require manual review, because lowering the threshold to automatically approve them would open the floodgates to the iPhone 13 Mini substitution attack.
+                    <strong className="text-amber-400">The Tradeoff:</strong> The residual 15.4% Tuning FPR consists entirely of genuine semantic variants that character-level bigram algorithms cannot comprehend—such as &quot;USB-C Cable 1m&quot; vs &quot;USB C Cable, 1 Meter&quot; (which scores a dismal 0.538) or &quot;Bluetooth Speaker&quot; vs &quot;BT Speaker&quot; (0.461). We intentionally accept that these perfectly benign abbreviations will fall below the 0.60 threshold and require manual review, because lowering the threshold to automatically approve them would open the floodgates to the &quot;iPhone 13 Mini&quot; substitution attack.
                   </p>
                   <p className="text-xs text-slate-500 italic mt-2">
                     (Note: The Live Evaluation matrix above currently shows a 0.0% FPR because the stratified shuffle randomly placed our hardest semantic boundary cases into the 70% offline Tuning Set rather than the 30% Held-Out set. Additionally, our 45-case offline dataset is intentionally saturated with boundary and adversarial cases to stress-test the engine, artificially inflating the FPR relative to a normal, predominantly clean production distribution).
@@ -209,7 +214,7 @@ export default function EvalDashboard() {
                 </div>
               </div>
               <div className="space-y-2 max-h-[300px] overflow-auto pr-2">
-                {dynamicMetrics.results.map((r: any, i: number) => (
+                {dynamicMetrics.results.map((r: { name: string; isFlagged: boolean; reason: string }, i: number) => (
                   <div key={i} className="text-xs flex justify-between items-center border-b border-slate-800/50 pb-2">
                     <span className="text-slate-300 font-medium">{r.name}</span>
                     <span className={`font-mono px-2 py-1 rounded text-[10px] uppercase font-bold tracking-wider ${r.isFlagged ? 'bg-red-900/30 text-red-400 border border-red-500/20' : 'bg-emerald-900/30 text-emerald-400 border border-emerald-500/20'}`}>

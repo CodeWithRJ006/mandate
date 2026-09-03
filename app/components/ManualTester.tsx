@@ -10,10 +10,17 @@ export default function ManualTester({ context }: { context?: 'main' | 'eval' })
   const [fulfilledSku, setFulfilledSku] = useState("Organic Apples (1kg)");
   const [fulfilledAmount, setFulfilledAmount] = useState<string>("2030");
   const [actualQty, setActualQty] = useState<string>("1");
-  const [result, setResult] = useState<any>(null);
+  interface Explainability {
+    skuSimilarity?: number;
+    amountVariancePct?: number;
+    deltaAmount?: number;
+    statusMessage?: string;
+  }
+  const [result, setResult] = useState<{ verdict: string; reason?: string | null; explainability?: Explainability } | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const PRESETS: Record<string, any> = {
+  type Preset = { authSku: string; authAmt: string; authQty: string; fullSku: string; fullAmt: string; fullQty: string };
+  const PRESETS: Record<string, Preset> = {
     'Groceries': { authSku: "Organic Apples", authAmt: "2000", authQty: "1", fullSku: "Organic Apples (1kg)", fullAmt: "2030", fullQty: "1" },
     'Electronics': { authSku: "iPhone 15 Pro", authAmt: "120000", authQty: "1", fullSku: "iPhone 15 Pro", fullAmt: "120150", fullQty: "1" },
     'Fashion': { authSku: "Nike Air Force 1", authAmt: "8500", authQty: "1", fullSku: "Nike Air Force 1", fullAmt: "8900", fullQty: "1" },
@@ -125,9 +132,9 @@ export default function ManualTester({ context }: { context?: 'main' | 'eval' })
             <span className="text-xs font-medium text-slate-400 uppercase">{result.reason || "Within Authorized Parameters"}</span>
           </div>
           <div className="text-sm space-y-1.5 text-slate-300">
-            <p>SKU Similarity Score: <span className="font-mono bg-slate-900 px-1 py-0.5 rounded text-white">{(result.explainability.skuSimilarity * 100).toFixed(1)}%</span> <span className="text-xs text-slate-500">(Threshold: 60%)</span></p>
-            <p>Amount Variance: <span className="font-mono bg-slate-900 px-1 py-0.5 rounded text-white">{result.explainability.amountVariancePct}%</span> <span className="text-xs text-slate-500">(Max Allowed: 2.0%)</span></p>
-            <p>Delta: <span className="font-bold">&#8377;{result.explainability.deltaAmount}</span> <span className="text-xs text-slate-400 italic">({result.explainability.statusMessage})</span></p>
+            <p>SKU Similarity Score: <span className="font-mono bg-slate-900 px-1 py-0.5 rounded text-white">{((result.explainability?.skuSimilarity || 0) * 100).toFixed(1)}%</span> <span className="text-xs text-slate-500">(Threshold: 60%)</span></p>
+            <p>Amount Variance: <span className="font-mono bg-slate-900 px-1 py-0.5 rounded text-white">{result.explainability?.amountVariancePct || 0}%</span> <span className="text-xs text-slate-500">(Max Allowed: 2.0%)</span></p>
+            <p>Delta: <span className="font-bold">&#8377;{result.explainability?.deltaAmount || 0}</span> <span className="text-xs text-slate-400 italic">({result.explainability?.statusMessage || ''})</span></p>
           </div>
         </div>
       )}

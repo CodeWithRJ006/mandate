@@ -46,7 +46,7 @@ export async function POST(req: Request) {
         statusMessage: result.status === 'APPROVED' ? 'Approved: Within thresholds' : `Rejected: ${result.reason}`
       }
     });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message || 'Malformed verification payload' }, { status: 400 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: (e as Error).message || 'Malformed verification payload' }, { status: 400 });
   }
 }
