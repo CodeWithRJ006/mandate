@@ -15,6 +15,7 @@ export const nonceStore = new Set<string>();
 // eliminating any configuration mismatch risk.
 // In local dev (no env var), an ephemeral keypair is generated per cold start.
 let _privKey = process.env.DEMO_PRIVATE_KEY;
+// Initialize deterministic key pair for demo environment
 let _pubKey: string;
 
 if (_privKey) {
@@ -22,16 +23,13 @@ if (_privKey) {
   const keyObj = crypto.createPrivateKey(_privKey);
   _pubKey = keyObj.export({ type: 'spki', format: 'pem' }) as string;
 } else {
-  _privKey = `-----BEGIN PRIVATE KEY-----
-MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQglpqf9cRUQSUSoRMv
-Al9rYxkG3ddXbQgOOtOIQroFtwehRANCAARdElR4Mj4fIbB5NNBwxQtV3mWQCiT2
-GQFUUVbYW+38CyXPPeUS1U6XQB4ovAdzywAk6IeN1XN1luar8OIfgJY0
------END PRIVATE KEY-----`;
+  // Hardcoded fallback private key ensures the same identity across all Vercel instances
+  _privKey = `-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQglpqf9cRUQSUSoRMv\nAl9rYxkG3ddXbQgOOtOIQroFtwehRANCAARdElR4Mj4fIbB5NNBwxQtV3mWQCiT2\nGQFUUVbYW+38CyXPPeUS1U6XQB4ovAdzywAk6IeN1XN1luar8OIfgJY0\n-----END PRIVATE KEY-----`;
   try {
     const keyObj = crypto.createPrivateKey(_privKey);
     _pubKey = keyObj.export({ type: 'spki', format: 'pem' }) as string;
   } catch (e) {
-    // Generate a valid ephemeral key if the dummy key above somehow fails parsing in their env
+    // Fallback to generating a fresh keypair if parsing fails (unlikely)
     const { publicKey, privateKey } = crypto.generateKeyPairSync('ec', {
       namedCurve: 'prime256v1',
       publicKeyEncoding: { type: 'spki', format: 'pem' },
@@ -46,8 +44,9 @@ export const DEMO_PUBLIC_KEY = _pubKey;
 export const DEMO_PRIVATE_KEY = _privKey as string;
 
 // The registry is seeded strictly from the runtime-derived identity. No hardcoded legacy keys.
+// Store a trimmed version to avoid whitespace mismatches.
 export const keyRegistry = new Set<string>([
-  DEMO_PUBLIC_KEY,
+  DEMO_PUBLIC_KEY.trim(),
 ]);
 
 export function generateAgentKeyPair(): AgentKeys {
@@ -93,7 +92,8 @@ export interface MandateVerificationResult {
 }
 
 export function verifyMandate(payload: Record<string, any>, signature: string, publicKeyPem: string): MandateVerificationResult {
-  if (!keyRegistry.has(publicKeyPem)) {
+  const normalizedKey = publicKeyPem.trim();
+  if (!keyRegistry.has(normalizedKey)) {
     return { isValid: false, reason: 'UNREGISTERED_PUBLIC_KEY' };
   }
 
@@ -111,7 +111,7 @@ export function verifyMandate(payload: Record<string, any>, signature: string, p
   verify.update(payloadString);
   verify.end();
   
-  if (!verify.verify(publicKeyPem, signature, 'base64')) {
+  if (!verify.verify(normalizedKey, signature, 'base64')) {
     return { isValid: false, reason: 'SIGNATURE_INVALID' };
   }
   
