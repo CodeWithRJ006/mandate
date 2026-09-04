@@ -32,9 +32,9 @@
     "tsx": "^4.23.13",
     "typescript": "^5.9.3"
   },
-  "description": "This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).",
+  "description": "Razorpay UAP Agentic Recourse Layer - A cryptographically secure, deterministic risk engine for autonomous agent payments.",
   "main": "index.js",
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+  "keywords": ["razorpay", "uap", "agents", "crypto", "ecdsa"],
+  "author": "CodeWithRJ006",
+  "license": "MIT"
 }
