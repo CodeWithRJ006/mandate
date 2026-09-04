@@ -21,13 +21,24 @@ if (_privKey) {
   const keyObj = crypto.createPrivateKey(_privKey);
   _pubKey = keyObj.export({ type: 'spki', format: 'pem' }) as string;
 } else {
-  const { publicKey, privateKey } = crypto.generateKeyPairSync('ec', {
-    namedCurve: 'prime256v1',
-    publicKeyEncoding: { type: 'spki', format: 'pem' },
-    privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
-  });
-  _privKey = privateKey;
-  _pubKey = publicKey;
+  _privKey = `-----BEGIN PRIVATE KEY-----
+MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQglpqf9cRUQSUSoRMv
+Al9rYxkG3ddXbQgOOtOIQroFtwehRANCAARdElR4Mj4fIbB5NNBwxQtV3mWQCiT2
+GQFUUVbYW+38CyXPPeUS1U6XQB4ovAdzywAk6IeN1XN1luar8OIfgJY0
+-----END PRIVATE KEY-----`;
+  try {
+    const keyObj = crypto.createPrivateKey(_privKey);
+    _pubKey = keyObj.export({ type: 'spki', format: 'pem' }) as string;
+  } catch (e) {
+    // Generate a valid ephemeral key if the dummy key above somehow fails parsing in their env
+    const { publicKey, privateKey } = crypto.generateKeyPairSync('ec', {
+      namedCurve: 'prime256v1',
+      publicKeyEncoding: { type: 'spki', format: 'pem' },
+      privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+    });
+    _privKey = privateKey;
+    _pubKey = publicKey;
+  }
 }
 
 export const DEMO_PUBLIC_KEY = _pubKey;

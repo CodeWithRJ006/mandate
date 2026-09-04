@@ -125,12 +125,13 @@ curl -X POST https://razorpay-uap-recourse.vercel.app/api/verify \
   -H "Content-Type: application/json" \
   -d '{
     "mandate": {
+      "nonce": "readme-demo-nonce-999",
+      "expiry": 1788613874869,
       "sku": "Organic Apples",
       "authorized_amount": 1000,
       "quantity": 1,
-      "nonce": "readme-demo-nonce-999",
-      "signature": "MEUCIQCx8Kjv+mSQb9uOrmOZgkwznQ/gjeaekJgyTu0rXfAldAIgfPUvrsf3/ncDimPZIUlqWTZP79q2BmNr8ayRKpnNxis=",
-      "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE2ngOmg6UfV/a80UmQ5Y/1DI4FW0G\nP7zd7ReKCorRrNkmHTS/9I347smuOWoK/sxMM6OKnMdzhnfidzx77NxA7A==\n-----END PUBLIC KEY-----\n"
+      "signature": "MEUCICDWtdZ+dviJrayoRMvEwRz2qPanpioNkwu0mSvBLFeWAiEA21Toc1Iepf2SocMifYooPjNZyF8ijxTROE7Q2HXspug=",
+      "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEv61jSmDb6Arzsmc3Rx9DeEIge29/\n5zktG5pMkNL1LBq5i4dvYeatP9zxau134nIsElHgAG8crMOGA0/y9iCztw==\n-----END PUBLIC KEY-----\n"
     },
     "fulfillment": {
       "sku": "Organic Apples (1kg)",
