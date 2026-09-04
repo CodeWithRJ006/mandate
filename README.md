@@ -3,6 +3,8 @@
 
 An autonomous, cryptographically-secured recourse layer for the Unified Agent Protocol (UAP). This system enables AI agents to transact autonomously by enforcing a deterministic, tamper-proof security boundary between merchant fulfillment and user mandates.
 
+**Core Architectural Philosophy:** *LLMs generate agent behavior. Deterministic cryptographic and policy controls execute the final financial authorization.* We explicitly do not use an LLM for the final risk decision, because a payment rail cannot afford hallucinated financial approvals.
+
 ---
 
 ## 🔒 The Strict Security Boundary (Core Innovation)

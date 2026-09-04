@@ -364,7 +364,7 @@ export default function Dashboard() {
                 ${status === 'DISPUTED' ? 'bg-amber-900/40 border-amber-500/50 text-amber-400' : ''}
                 ${status === 'RESOLVED' ? 'bg-blue-900/40 border-blue-500/50 text-blue-400' : ''}
               `}>
-                {status === 'FLAGGED' ? 'FLAGGED — AUTO REFUND' : status}
+                {status === 'FLAGGED' ? 'FLAGGED — REFUND QUEUED' : status}
                 {status === 'FLAGGED' && resultReason && (
                   <div className="text-xs font-normal mt-1 opacity-90 uppercase tracking-wider text-red-300">
                     Reason: {resultReason.replace(/_/g, ' ')}
