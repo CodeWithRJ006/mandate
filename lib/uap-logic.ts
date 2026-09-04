@@ -28,7 +28,7 @@ if (_privKey) {
   try {
     const keyObj = crypto.createPrivateKey(_privKey);
     _pubKey = keyObj.export({ type: 'spki', format: 'pem' }) as string;
-  } catch (e) {
+  } catch (_e) {
     // Fallback to generating a fresh keypair if parsing fails (unlikely)
     const { publicKey, privateKey } = crypto.generateKeyPairSync('ec', {
       namedCurve: 'prime256v1',

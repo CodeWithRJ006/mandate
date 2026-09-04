@@ -22,7 +22,7 @@ function loadChain(): LedgerBlock[] {
     if (Array.isArray(parsed) && parsed.length > 0) {
       return parsed;
     }
-  } catch (_) {}
+  } catch (_e) { /* File not found or invalid JSON — start fresh */ }
   // If file missing or invalid, start with genesis block
   return [createGenesisBlock()];
 }
@@ -32,17 +32,9 @@ function saveChain(chain: LedgerBlock[]) {
     const dir = path.dirname(ledgerFilePath);
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(ledgerFilePath, JSON.stringify(chain, null, 2), 'utf-8');
-  } catch (e) {
-    console.error('Failed to persist ledger:', e);
+  } catch (saveErr) {
+    console.error('Failed to persist ledger:', saveErr);
   }
-}
-
-function deterministicStringify(obj: any): string {
-  if (obj === null || typeof obj !== 'object') return JSON.stringify(obj);
-  if (Array.isArray(obj)) return `[${obj.map(deterministicStringify).join(',')}]`;
-  const keys = Object.keys(obj).sort();
-  const res = keys.map((k) => `${JSON.stringify(k)}:${deterministicStringify(obj[k])}`);
-  return `{${res.join(',')}}`;
 }
 
 function calculateHash(block: Omit<LedgerBlock, 'hash'>): string {
