@@ -83,12 +83,13 @@ If we pushed the threshold to `0.55` to reduce friction, these known fraud vecto
 
 ## ⛓️ Cryptographic Audit Ledger
 
-To prove non-repudiation, the system maintains an in-memory SHA-256 hash-chain ledger (`lib/ledger.ts`). Every evaluation automatically commits a block containing the `verdict`, `nonce`, and `prevHash`. The live UI dynamically polls this chain to verify integrity. You can intentionally corrupt a block in the UI to watch the chain break. 
+To prove non-repudiation, the system maintains a **file-backed SHA-256 hash-chain ledger** (`lib/ledger.ts`). Every evaluation automatically commits a block containing the `verdict`, `nonce`, and `prevHash`. The chain is persisted to `data/ledger.json` and survives server restarts. The live UI dynamically polls this chain to verify integrity. You can intentionally corrupt a block in the UI to watch the chain break. 
 
 > [!NOTE]
-> **Ephemerality (by design):** For the live Vercel demo, both the hash-chain ledger and the nonce replay guard reset on Vercel cold-starts. This is intentional for a hackathon. In a production environment, the ledger would be backed by a persistent data store (Kafka/DynamoDB) and the nonce store would use Redis with a 24-hour TTL.
+> **Nonce store** (in-memory `Set`) resets on cold-starts by design — a production environment would use Redis with a 24-hour TTL. The **ledger itself** now persists to disk (`data/ledger.json`) across restarts, satisfying audit trail requirements. On Vercel, the `/tmp` filesystem is ephemeral; a production deployment would target DynamoDB or Kafka.
 
 ---
+
 
 ## 🚀 Setup & Fallback Instructions
 
@@ -118,30 +119,45 @@ npx tsx scripts/evaluate-risk-engine.ts
 
 ## 🛠️ Live API Verification (Bring Your Own Transaction)
 
-To verify the policy engine is a real cryptographic service, evaluate arbitrary payloads against the deterministic diff engine:
+To verify the policy engine is a real cryptographic service, use the **Manual Tester** panel in the
+live UI, or run this Node.js snippet locally (requires `npm run dev` to be running):
 
-```bash
-curl -X POST https://razorpay-uap-recourse.vercel.app/api/verify \
-  -H "Content-Type: application/json" \
-  -d '{
-    "mandate": {
-      "nonce": "readme-demo-nonce-999",
-      "expiry": 1788613874869,
-      "sku": "Organic Apples",
-      "authorized_amount": 1000,
-      "quantity": 1,
-      "signature": "MEUCICDWtdZ+dviJrayoRMvEwRz2qPanpioNkwu0mSvBLFeWAiEA21Toc1Iepf2SocMifYooPjNZyF8ijxTROE7Q2HXspug=",
-      "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEv61jSmDb6Arzsmc3Rx9DeEIge29/\n5zktG5pMkNL1LBq5i4dvYeatP9zxau134nIsElHgAG8crMOGA0/y9iCztw==\n-----END PUBLIC KEY-----\n"
-    },
-    "fulfillment": {
-      "sku": "Organic Apples (1kg)",
-      "actual_amount": 1015,
-      "quantity": 1
-    }
-  }'
+```js
+// verify-local.js — run with: node verify-local.js
+const crypto = require('crypto');
+
+// 1. Generate a fresh ECDSA keypair
+const { publicKey, privateKey } = crypto.generateKeyPairSync('ec', {
+  namedCurve: 'prime256v1',
+  publicKeyEncoding: { type: 'spki', format: 'pem' },
+  privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+});
+
+// 2. Sign a mandate
+const payload = {
+  nonce: crypto.randomUUID(),
+  expiry: Date.now() + 86_400_000, // 24 hours
+  sku: 'Organic Apples',
+  authorized_amount: 1000,
+  quantity: 1,
+};
+const canonical = JSON.stringify(payload, Object.keys(payload).sort());
+const sig = crypto.createSign('SHA256');
+sig.update(canonical); sig.end();
+const signature = sig.sign(privateKey, 'base64');
+
+// 3. POST to the live API (expects: 403 UNREGISTERED_PUBLIC_KEY unless run against local dev server)
+fetch('https://razorpay-uap-recourse.vercel.app/api/verify', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    mandate: { ...payload, signature, publicKeyPem: publicKey },
+    fulfillment: { sku: 'Organic Apples (1kg)', actual_amount: 1010, quantity: 1 }
+  }),
+}).then(r => r.json()).then(console.log);
 ```
 
-*(Note: If you alter the payload without updating the ECDSA signature, the API will strictly reject it with a 403).*
+> *(Note: The live Vercel API will return `403 UNREGISTERED_PUBLIC_KEY` for any external keypair because only the server-registered demo key is trusted — this is the intended security behaviour. The **Manual Tester** panel in the UI uses the server's registered key automatically.)*
 
 ---
 **Hackathon Compliance:** Built explicitly for Track 2 (Defensive). The "Malicious Fulfillment" generation in the UI is strictly a mock simulator designed solely to exercise the defensive verification engine. It contains no offensive AI capabilities.
