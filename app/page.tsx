@@ -23,7 +23,7 @@ export default function Dashboard() {
   // Audit/Global State
   const [status, setStatus] = useState<string>('IDLE');
   const [resultReason, setResultReason] = useState<string | null>(null);
-  const [trustScore, setTrustScore] = useState<number>(99);
+  const [riskScore, setRiskScore] = useState<number>(0);
   const [flashColor, setFlashColor] = useState<string>('');
   const [preset, setPreset] = useState<string>('Groceries');
   
@@ -52,6 +52,9 @@ export default function Dashboard() {
     setApiWarning('');
     setUserTelemetry(null);
     setVerificationBundle(null);
+    setRiskScore(0);
+    setStatus('IDLE');
+    setResultReason(null);
 
     try {
       const res = await fetch('/api/agents', {
@@ -73,12 +76,14 @@ export default function Dashboard() {
       setMandate(augmentedPayload);
       setSignature(signature);
       setVerificationBundle(verificationBundle);
-      setStatus('IDLE');
       setFulfillment(null);
       setMerchantTelemetry(null);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
       setApiWarning('Critical network failure triggering fallback execution.');
+      setStatus('BLOCKED');
+      setResultReason(e.message || 'Network Failure');
+      setRiskScore(99);
     }
     setIsProcessing(false);
   };
@@ -120,27 +125,37 @@ export default function Dashboard() {
       setFulfillment(payload);
       setMerchantTelemetry(responseJson.telemetry);
 
-      const evaluation = await evaluateDiff(
-        currentMandate,
-        { sku: payload.sku, actual_amount: payload.actual_amount, quantity: payload.quantity || 1 },
-        currentSignature,
-        keys.publicKey
-      );
+      try {
+        const evaluation = await evaluateDiff(
+          currentMandate,
+          { sku: payload.sku, actual_amount: payload.actual_amount, quantity: payload.quantity || 1 },
+          currentSignature,
+          keys.publicKey
+        );
 
-      if (evaluation.status === 'APPROVED') {
-        setStatus('SETTLED');
-        triggerFlash('bg-green-500/20');
-        setTrustScore(99);
-      } else {
-        setStatus('FLAGGED');
+        if (evaluation.status === 'APPROVED') {
+          setStatus('VERIFIED');
+          triggerFlash('bg-green-500/20');
+          setRiskScore(0);
+        } else {
+          setStatus('BLOCKED');
+          triggerFlash('bg-red-500/20');
+          setRiskScore(99);
+        }
+        
+        setResultReason(evaluation.reason || null);
+      } catch (evalError: any) {
+        setStatus('BLOCKED');
         triggerFlash('bg-red-500/20');
-        setTrustScore(85);
+        setRiskScore(99);
+        setResultReason(evalError.message || 'Evaluation Engine Error');
       }
-      
-      setResultReason(evaluation.reason || null);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
       setApiWarning('Critical network failure triggering fallback execution.');
+      setStatus('BLOCKED');
+      setRiskScore(99);
+      setResultReason(e.message || 'Submission Failed');
     }
     setIsProcessing(false);
   };
@@ -149,7 +164,7 @@ export default function Dashboard() {
   const handleAdminAccept = () => {
     if(!isProcessing) {
       setStatus('RESOLVED');
-      setTrustScore(99);
+      setRiskScore(0);
       triggerFlash('bg-green-500/20');
     }
   };
@@ -348,8 +363,8 @@ export default function Dashboard() {
           <div className="flex justify-between items-end mb-6">
               <div>
                 <p className="text-slate-400 text-sm">Demo Risk State</p>
-                <div className={`text-5xl font-black transition-all duration-700 ${trustScore === 99 ? 'text-emerald-400' : 'text-red-400'}`}>
-                  {trustScore}
+                <div className={`text-5xl font-black transition-all duration-700 ${riskScore === 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {riskScore}
                 </div>
               </div>
           </div>
@@ -359,13 +374,13 @@ export default function Dashboard() {
               <p className="text-slate-400 text-sm">Transaction Status</p>
               <div className={`mt-1 font-mono font-bold text-lg p-3 rounded border
                 ${status === 'IDLE' ? 'bg-slate-800 border-slate-700 text-slate-300' : ''}
-                ${status === 'SETTLED' ? 'bg-emerald-900/40 border-emerald-500/50 text-emerald-400' : ''}
-                ${status === 'FLAGGED' ? 'bg-red-900/40 border-red-500/50 text-red-400' : ''}
+                ${status === 'VERIFIED' ? 'bg-emerald-900/40 border-emerald-500/50 text-emerald-400' : ''}
+                ${status === 'BLOCKED' ? 'bg-red-900/40 border-red-500/50 text-red-400' : ''}
                 ${status === 'DISPUTED' ? 'bg-amber-900/40 border-amber-500/50 text-amber-400' : ''}
                 ${status === 'RESOLVED' ? 'bg-blue-900/40 border-blue-500/50 text-blue-400' : ''}
               `}>
-                {status === 'FLAGGED' ? 'FLAGGED — REFUND QUEUED' : status}
-                {status === 'FLAGGED' && resultReason && (
+                {status === 'BLOCKED' ? 'BLOCKED — REFUND QUEUED' : status}
+                {status === 'BLOCKED' && resultReason && (
                   <div className="text-xs font-normal mt-1 opacity-90 uppercase tracking-wider text-red-300">
                     Reason: {resultReason.replace(/_/g, ' ')}
                   </div>
@@ -375,8 +390,8 @@ export default function Dashboard() {
 
             <button 
               onClick={handleAppeal}
-              disabled={status !== 'FLAGGED' || isProcessing}
-              className={`w-full py-2 rounded-lg font-medium transition-colors ${status === 'FLAGGED' ? 'bg-amber-600 hover:bg-amber-500 text-white' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}
+              disabled={status !== 'BLOCKED' || isProcessing}
+              className={`w-full py-2 rounded-lg font-medium transition-colors ${status === 'BLOCKED' ? 'bg-amber-600 hover:bg-amber-500 text-white' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}
             >
               Appeal (Merchant)
             </button>

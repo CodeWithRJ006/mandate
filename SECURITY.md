@@ -22,7 +22,6 @@ This project implements a prototype **Agentic Recourse Layer** and cryptographic
 As this is a prototype, several components prioritize demonstration speed over production-grade security:
 - **In-Memory Storage:** The `globalLedger`, `nonceStore`, and `keyRegistry` use Node.js memory structures (Sets/Arrays). On a serverless platform (like Vercel), these reset during cold starts. A production environment must implement persistent, atomic stores (e.g., Redis for nonces with TTL, PostgreSQL/Kafka for the ledger).
 - **Server-Side Demo Identity:** To keep the identity stable across serverless instances and avoid multi-instance sync limits, the live demo uses a static ECDSA keypair injected via Vercel Environment Variables. The private key is never exposed to the client or committed to source control. In production, a true PKI (Public Key Infrastructure) with hardware enclaves (HSM/KMS), W3C Verifiable Credentials (VCs), and Decentralized Identifiers (DIDs) must be used.
-- **Hardcoded Identity Seed:** A hardcoded public key exists in the `keyRegistry` initialization solely to allow the `cURL` API verification step in the README to function across deployments. 
 
 ## Reporting a Vulnerability
 

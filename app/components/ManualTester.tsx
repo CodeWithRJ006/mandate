@@ -16,7 +16,7 @@ export default function ManualTester({ context }: { context?: 'main' | 'eval' })
     deltaAmount?: number;
     statusMessage?: string;
   }
-  const [result, setResult] = useState<{ verdict: string; reason?: string | null; explainability?: Explainability } | null>(null);
+  const [result, setResult] = useState<{ verdict?: string; reason?: string | null; error?: string; explainability?: Explainability } | null>(null);
   const [loading, setLoading] = useState(false);
 
   type Preset = { authSku: string; authAmt: string; authQty: string; fullSku: string; fullAmt: string; fullQty: string };
@@ -50,17 +50,22 @@ export default function ManualTester({ context }: { context?: 'main' | 'eval' })
       quantity: Number(mandateQty)
     });
 
-    const res = await fetch('/api/verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        mandate: { ...augmentedPayload, signature, publicKeyPem: verificationBundle.publicKeyPem },
-        fulfillment: { sku: fulfilledSku, actual_amount: Number(fulfilledAmount), quantity: Number(actualQty) }
-      })
-    });
-    const data = await res.json();
-    setResult(data);
-    setLoading(false);
+    try {
+      const res = await fetch('/api/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mandate: { ...augmentedPayload, signature, publicKeyPem: verificationBundle.publicKeyPem },
+          fulfillment: { sku: fulfilledSku, actual_amount: Number(fulfilledAmount), quantity: Number(actualQty) }
+        })
+      });
+      const data = await res.json();
+      setResult(data);
+    } catch (e: any) {
+      setResult({ error: e.message || 'Failed to communicate with API' });
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -128,14 +133,20 @@ export default function ManualTester({ context }: { context?: 'main' | 'eval' })
       {result && (
         <div className={`mt-6 p-4 rounded-lg border ${result.verdict === 'APPROVED' ? 'bg-emerald-950/40 border-emerald-500/50' : 'bg-red-950/40 border-red-500/50'}`}>
           <div className="flex justify-between items-center mb-3 border-b border-slate-800/50 pb-2">
-            <span className={`font-black text-lg ${result.verdict === 'APPROVED' ? 'text-emerald-400' : 'text-red-400'}`}>{result.verdict}</span>
-            <span className="text-xs font-medium text-slate-400 uppercase">{result.reason || "Within Authorized Parameters"}</span>
+            <span className={`font-black text-lg ${result.verdict === 'APPROVED' ? 'text-emerald-400' : 'text-red-400'}`}>
+              {result.error ? 'ERROR' : result.verdict}
+            </span>
+            <span className="text-xs font-medium text-slate-400 uppercase">
+              {result.error || result.reason || "Within Authorized Parameters"}
+            </span>
           </div>
-          <div className="text-sm space-y-1.5 text-slate-300">
-            <p>SKU Similarity Score: <span className="font-mono bg-slate-900 px-1 py-0.5 rounded text-white">{((result.explainability?.skuSimilarity || 0) * 100).toFixed(1)}%</span> <span className="text-xs text-slate-500">(Threshold: 60%)</span></p>
-            <p>Amount Variance: <span className="font-mono bg-slate-900 px-1 py-0.5 rounded text-white">{result.explainability?.amountVariancePct || 0}%</span> <span className="text-xs text-slate-500">(Max Allowed: 2.0%)</span></p>
-            <p>Delta: <span className="font-bold">&#8377;{result.explainability?.deltaAmount || 0}</span> <span className="text-xs text-slate-400 italic">({result.explainability?.statusMessage || ''})</span></p>
-          </div>
+          {!result.error && (
+            <div className="text-sm space-y-1.5 text-slate-300">
+              <p>SKU Similarity Score: <span className="font-mono bg-slate-900 px-1 py-0.5 rounded text-white">{((result.explainability?.skuSimilarity || 0) * 100).toFixed(1)}%</span> <span className="text-xs text-slate-500">(Threshold: 60%)</span></p>
+              <p>Amount Variance: <span className="font-mono bg-slate-900 px-1 py-0.5 rounded text-white">{result.explainability?.amountVariancePct || 0}%</span> <span className="text-xs text-slate-500">(Max Allowed: 2.0%)</span></p>
+              <p>Delta: <span className="font-bold">&#8377;{result.explainability?.deltaAmount || 0}</span> <span className="text-xs text-slate-400 italic">({result.explainability?.statusMessage || ''})</span></p>
+            </div>
+          )}
         </div>
       )}
     </div>
