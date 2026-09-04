@@ -1,6 +1,5 @@
 import { POST } from '../app/api/verify/route';
 import { generateAgentKeyPair, signMandate, keyRegistry } from '../lib/uap-logic';
-import { POLICY_CONFIG } from '../lib/config';
 
 describe('HTTP Boundary & Security Abuse Integration Tests', () => {
   const mockKeys = generateAgentKeyPair(); // also registers the key
@@ -11,7 +10,7 @@ describe('HTTP Boundary & Security Abuse Integration Tests', () => {
   };
   const { augmentedPayload, signature } = signMandate(validPayload, mockKeys.privateKey);
 
-  const createRequest = (body: any) => {
+  const createRequest = (body: Record<string, unknown>) => {
     return new Request('https://razorpay-uap-recourse.vercel.app/api/verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
