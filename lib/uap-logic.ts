@@ -23,21 +23,18 @@ if (_privKey) {
   const keyObj = crypto.createPrivateKey(_privKey);
   _pubKey = keyObj.export({ type: 'spki', format: 'pem' }) as string;
 } else {
-  // Hardcoded fallback private key ensures the same identity across all Vercel instances
-  _privKey = `-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQglpqf9cRUQSUSoRMv\nAl9rYxkG3ddXbQgOOtOIQroFtwehRANCAARdElR4Mj4fIbB5NNBwxQtV3mWQCiT2\nGQFUUVbYW+38CyXPPeUS1U6XQB4ovAdzywAk6IeN1XN1luar8OIfgJY0\n-----END PRIVATE KEY-----`;
-  try {
-    const keyObj = crypto.createPrivateKey(_privKey);
-    _pubKey = keyObj.export({ type: 'spki', format: 'pem' }) as string;
-  } catch (_e) {
-    // Fallback to generating a fresh keypair if parsing fails (unlikely)
-    const { publicKey, privateKey } = crypto.generateKeyPairSync('ec', {
-      namedCurve: 'prime256v1',
-      publicKeyEncoding: { type: 'spki', format: 'pem' },
-      privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
-    });
-    _privKey = privateKey;
-    _pubKey = publicKey;
-  }
+  // Generate a fresh ephemeral keypair per cold start for local dev.
+  // We strictly avoid hardcoded static private key fallbacks to ensure security.
+  // In production (Vercel), DEMO_PRIVATE_KEY must be set in Environment Variables
+  // to maintain stable identity across serverless instances.
+  console.log('No DEMO_PRIVATE_KEY found in env; generating ephemeral keypair for this session.');
+  const { publicKey, privateKey } = crypto.generateKeyPairSync('ec', {
+    namedCurve: 'prime256v1',
+    publicKeyEncoding: { type: 'spki', format: 'pem' },
+    privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+  });
+  _privKey = privateKey;
+  _pubKey = publicKey;
 }
 
 export const DEMO_PUBLIC_KEY = _pubKey;
