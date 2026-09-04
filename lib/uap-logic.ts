@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import crypto from 'crypto';
-import stringSimilarity from 'string-similarity';
 import { POLICY_CONFIG } from './config';
 
 export interface AgentKeys {
@@ -9,24 +8,23 @@ export interface AgentKeys {
 }
 
 export const nonceStore = new Set<string>();
+export const DEMO_PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEH76QNhVw2kWdqIxJapNQoAE4jnbS\nS+L4wvluQOtY5TwJ07OmE64mKNdPKs4/4kFP0W9KGHKTbdV1u2U4BUx5gA==\n-----END PUBLIC KEY-----\n";
+
+export const DEMO_PRIVATE_KEY = "-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgCiJs8Wgb0DLzKcnX\nWUrKMhUoH+Zbc8l2Oqw783LAUUuhRANCAAQfvpA2FXDaRZ2ojElqk1CgATiOdtJL\n4vjC+W5A61jlPAnTs6YTriYo108qzj/iQU/Rb0oYcpNt1XW7ZTgFTHmA\n-----END PRIVATE KEY-----\n";
+
 export const keyRegistry = new Set<string>([
+  DEMO_PUBLIC_KEY,
   "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE2ngOmg6UfV/a80UmQ5Y/1DI4FW0G\nP7zd7ReKCorRrNkmHTS/9I347smuOWoK/sxMM6OKnMdzhnfidzx77NxA7A==\n-----END PUBLIC KEY-----\n"
 ]);
 
 export function generateAgentKeyPair(): AgentKeys {
-  const { publicKey, privateKey } = crypto.generateKeyPairSync('ec', {
-    namedCurve: 'prime256v1',
-  });
-
-  const pub = publicKey.export({ type: 'spki', format: 'pem' }) as string;
-  const priv = privateKey.export({ type: 'pkcs8', format: 'pem' }) as string;
-  
-  // Bind identity: register the public key as a trusted anchor
-  keyRegistry.add(pub);
-
+  // Hackathon Prototype Limitation Fix: 
+  // Returning a static keypair instead of crypto.generateKeyPairSync() 
+  // so that concurrent Vercel instances don't hit UNREGISTERED_PUBLIC_KEY errors
+  // due to the in-memory keyRegistry not syncing across warm instances.
   return {
-    publicKey: pub,
-    privateKey: priv,
+    publicKey: DEMO_PUBLIC_KEY,
+    privateKey: DEMO_PRIVATE_KEY,
   };
 }
 
@@ -160,11 +158,31 @@ export function evaluateFulfillment(
     return { status: 'REJECTED', reason: 'SKU_NUMERIC_DOWNGRADE' };
   }
 
-  // 4. SKU Similarity (String distance)
-  const similarity = stringSimilarity.compareTwoStrings(
-    mandate.sku || "",
-    fulfillment.sku || ""
-  );
+  // 4. Native Sørensen-Dice Similarity (Zero-dependency, Case/Whitespace Normalized)
+  const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const getBigrams = (str: string) => {
+    const bigrams = new Set<string>();
+    for (let i = 0; i < str.length - 1; i++) {
+      bigrams.add(str.substring(i, i + 2));
+    }
+    return bigrams;
+  };
+  
+  const normMandate = normalize(mandate.sku || "");
+  const normFulfill = normalize(fulfillment.sku || "");
+  
+  let similarity = 0;
+  if (normMandate === normFulfill) {
+    similarity = 1;
+  } else if (normMandate.length > 1 && normFulfill.length > 1) {
+    const bg1 = getBigrams(normMandate);
+    const bg2 = getBigrams(normFulfill);
+    let intersection = 0;
+    for (const bg of bg1) {
+      if (bg2.has(bg)) intersection++;
+    }
+    similarity = (2.0 * intersection) / (bg1.size + bg2.size);
+  }
 
   if (similarity < (config.similarityThreshold ?? sim)) {
     return { status: 'REJECTED', reason: 'SKU_MISMATCH' };

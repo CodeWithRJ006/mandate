@@ -13,8 +13,7 @@
     "next": "16.3.4",
     "openai": "^7.8.0",
     "react": "19.2.8",
-    "react-dom": "19.2.8",
-    "string-similarity": "^4.0.4"
+    "react-dom": "19.2.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -22,7 +21,6 @@
     "@types/node": "^20.19.43",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/string-similarity": "^4.0.2",
     "eslint": "^9",
     "eslint-config-next": "16.3.4",
     "jest": "^30.5.1",
@@ -34,7 +32,13 @@
   },
   "description": "Razorpay UAP Agentic Recourse Layer - A cryptographically secure, deterministic risk engine for autonomous agent payments.",
   "main": "index.js",
-  "keywords": ["razorpay", "uap", "agents", "crypto", "ecdsa"],
+  "keywords": [
+    "razorpay",
+    "uap",
+    "agents",
+    "crypto",
+    "ecdsa"
+  ],
   "author": "CodeWithRJ006",
   "license": "MIT"
 }
