@@ -148,8 +148,25 @@ export function evaluateFulfillment(
     return { status: 'REJECTED', reason: 'AMOUNT_EXCEEDED' };
   }
 
-  const similarity = stringSimilarity.compareTwoStrings(mandate.sku, fulfillment.sku);
-  if (similarity < sim) {
+  // 3. Numeric Downgrade Guard (Version/Tier protection)
+  // Fraudsters exploit string similarity by keeping brand words ("Pro Max") but changing the version number ("15" -> "11").
+  const extractNumbers = (str: string) => (str.match(/\d+/g) || []);
+  const mandateNums = extractNumbers(mandate.sku || "");
+  const fulfillmentNums = extractNumbers(fulfillment.sku || "");
+  
+  // If the mandate specified numeric versions (e.g., "15", "256"), the fulfillment MUST preserve them.
+  const isNumericDowngrade = mandateNums.some(num => !fulfillmentNums.includes(num));
+  if (isNumericDowngrade) {
+    return { status: 'REJECTED', reason: 'SKU_NUMERIC_DOWNGRADE' };
+  }
+
+  // 4. SKU Similarity (String distance)
+  const similarity = stringSimilarity.compareTwoStrings(
+    mandate.sku || "",
+    fulfillment.sku || ""
+  );
+
+  if (similarity < (config.similarityThreshold ?? sim)) {
     return { status: 'REJECTED', reason: 'SKU_MISMATCH' };
   }
 

@@ -125,21 +125,25 @@ export const DATASET: TestCase[] = [
     };
   }),
 
-  // 5. SKU Substitution (5 cases)
+  // 5. SKU Substitution / Numeric Version Downgrade (8 cases)
   ...[
     ["Organic Apples", "Bananas Cavendish"],
     ["iPhone 15 Pro", "iPhone 13 Mini"],
     ["Large Pepperoni Pizza", "Garlic Breadsticks"],
     ["Cotton Crew Shirt", "Polyester Windbreaker"],
     ["Full Cream Milk 1L", "Almond Beverage 200ml"],
-  ].map(([mSku, fSku], i) => ({
+    // Hard Version Downgrade Vectors (Added based on strict audit)
+    ["iPhone 15 Pro Max", "iPhone 11 Pro Max"],
+    ["Samsung Galaxy S24 Ultra", "Samsung Galaxy S21 Ultra"],
+    ["MacBook Pro 16-inch", "MacBook Pro 13-inch"]
+  ].map((pair, i) => ({
     id: `sku-sub-${i + 1}`,
     category: "sku_substitution",
-    description: `Product substitution: "${mSku}" -> "${fSku}"`,
-    mandate: createSignedMandate({ sku: mSku, authorized_amount: 500 }),
-    fulfillment: { sku: fSku, quantity: 1, actual_amount: 500 },
+    description: `Substituted ${pair[0]} with ${pair[1]}`,
+    mandate: createSignedMandate({ sku: pair[0], authorized_amount: 800 }),
+    fulfillment: { sku: pair[1], quantity: 1, actual_amount: 800 },
     expected: "REJECT" as const,
-    expectedReason: "SKU_MISMATCH" as const,
+    expectedReason: "SKU_MISMATCH" as const, // Or SKU_NUMERIC_DOWNGRADE
   })),
 
   // 6. Quantity Manipulation (4 cases)

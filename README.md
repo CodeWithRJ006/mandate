@@ -14,8 +14,9 @@ Real-world agentic payments cannot rely on LLM discretion for financial settleme
 1. **ECDSA prime256v1 Signatures:** The W3C-inspired mandate is signed cryptographically. *(Note: For this prototype, key generation and signing are simulated via a secure Next.js Server Action to represent a secure client enclave, rather than a true browser wallet)*. The backend `/api/verify` throws a strict `401 Unauthorized` or `403 Forbidden` if the signature is invalid.
 2. **Strict Identity Binding (Trust Anchor):** The backend maintains an in-memory `KeyRegistry`. An attacker cannot simply generate their own keypair and submit a mathematically valid signature—if the public key is not pre-registered to a trusted agent, the payload is rejected with `UNREGISTERED_PUBLIC_KEY`.
 3. **Quantity Nullification Guard:** A strict nullish-coalescing guard catches edge cases where a malicious agent attempts a `quantity: 0` attack to bypass amount validations.
-4. **Nonce Replay Prevention:** Every mandate generates a unique cryptographic nonce. The ledger strictly rejects duplicated nonces to prevent double-billing.
-5. **24-Hour Expiry Window:** Mandates enforce a strict `timestamp`, invalidating automatically after 24 hours.
+4. **Numeric Downgrade Guard (Anti-Version Spoofing):** Deterministic NLP similarity is vulnerable to version downgrades (e.g., "iPhone 15 Pro Max" -> "iPhone 11 Pro Max" yields a 0.846 similarity). The engine extracts and strictly enforces numeric version parity to prevent high-similarity product stripping.
+5. **Nonce Replay Prevention:** Every mandate generates a unique cryptographic nonce. The ledger strictly rejects duplicated nonces to prevent double-billing.
+6. **24-Hour Expiry Window:** Mandates enforce a strict `timestamp`, invalidating automatically after 24 hours.
 
 ### The Resolution State Machine
 ```mermaid
