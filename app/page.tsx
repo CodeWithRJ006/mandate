@@ -95,7 +95,7 @@ export default function Dashboard() {
       if (attackType === 'signature_tamper') {
         currentMandate.authorized_amount = 999999;
       } else if (attackType === 'expired_mandate') {
-        const result = await tamperMandateExpiryAction(mandate, keys.privateKey);
+        const result = await tamperMandateExpiryAction(mandate);
         currentMandate = result.augmentedPayload;
         currentSignature = result.signature;
       }

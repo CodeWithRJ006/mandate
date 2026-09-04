@@ -8,9 +8,22 @@ export interface AgentKeys {
 }
 
 export const nonceStore = new Set<string>();
-export const DEMO_PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEH76QNhVw2kWdqIxJapNQoAE4jnbS\nS+L4wvluQOtY5TwJ07OmE64mKNdPKs4/4kFP0W9KGHKTbdV1u2U4BUx5gA==\n-----END PUBLIC KEY-----\n";
 
-export const DEMO_PRIVATE_KEY = "-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgCiJs8Wgb0DLzKcnX\nWUrKMhUoH+Zbc8l2Oqw783LAUUuhRANCAAQfvpA2FXDaRZ2ojElqk1CgATiOdtJL\n4vjC+W5A61jlPAnTs6YTriYo108qzj/iQU/Rb0oYcpNt1XW7ZTgFTHmA\n-----END PRIVATE KEY-----\n";
+let envPubKey = process.env.DEMO_PUBLIC_KEY;
+let envPrivKey = process.env.DEMO_PRIVATE_KEY;
+
+if (!envPubKey || !envPrivKey) {
+  const { publicKey, privateKey } = crypto.generateKeyPairSync('ec', {
+    namedCurve: 'prime256v1',
+    publicKeyEncoding: { type: 'spki', format: 'pem' },
+    privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+  });
+  envPubKey = publicKey;
+  envPrivKey = privateKey;
+}
+
+export const DEMO_PUBLIC_KEY = envPubKey as string;
+export const DEMO_PRIVATE_KEY = envPrivKey as string;
 
 export const keyRegistry = new Set<string>([
   DEMO_PUBLIC_KEY,

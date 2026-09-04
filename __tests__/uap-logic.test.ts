@@ -57,11 +57,11 @@ describe('UAP Logic (ECDSA and Risk Engine)', () => {
       const payload = { sku: 'Organic Apples', authorized_amount: 2000 };
       const { augmentedPayload, signature } = signMandate(payload, keys.privateKey);
       
-      // First verification consumes the nonce
+      // First verification succeeds
       const firstCheck = verifyMandate(augmentedPayload, signature, keys.publicKey);
       expect(firstCheck.isValid).toBe(true);
       
-      // Manually consume the nonce as a successful fulfillment would
+      // Manually consume the nonce (simulating what the API layer does upon approval)
       consumeNonce(augmentedPayload.nonce);
       
       // Second verification rejects it

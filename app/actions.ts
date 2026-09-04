@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use server';
 
-import { generateAgentKeyPair, signMandate, verifyMandate, evaluateFulfillment } from '../lib/uap-logic';
+import { generateAgentKeyPair, signMandate, verifyMandate, evaluateFulfillment, consumeNonce, DEMO_PRIVATE_KEY } from '../lib/uap-logic';
 import { globalLedger } from '../lib/ledger';
 
 export interface AgentExecutionTelemetry {
@@ -36,16 +36,17 @@ export async function generateKeysAndSign(payload: Record<string, any>) {
   };
 
   return {
-    keys,
+    keys: { publicKey: keys.publicKey }, // Do NOT expose private key to client
     augmentedPayload,
     signature,
     verificationBundle
   };
 }
 
-export async function tamperMandateExpiryAction(payload: Record<string, unknown>, privateKeyPem: string) {
+export async function tamperMandateExpiryAction(payload: Record<string, unknown>) {
   const expiredPayload = { ...payload, expiry: Date.now() - 10000 };
-  const { augmentedPayload, signature, canonicalString } = signMandate(expiredPayload, privateKeyPem);
+  // Use the server-side demo identity directly, never exposing it to the client
+  const { augmentedPayload, signature, canonicalString } = signMandate(expiredPayload, DEMO_PRIVATE_KEY);
   return { augmentedPayload, signature, canonicalString };
 }
 
@@ -58,9 +59,12 @@ export async function evaluateDiff(mandate: any, fulfillment: any, signature: st
   if (!verification.isValid) {
     const res = { status: 'REJECTED', reason: verification.reason || 'SIGNATURE_INVALID' };
     globalLedger.addBlock(mandate.nonce || 'UNKNOWN_NONCE', res.status, res.reason);
-    return res;
+    return res as { status: 'APPROVED' | 'REJECTED', reason?: string };
   }
   const evalResult = evaluateFulfillment(mandate, fulfillment);
+  if (evalResult.status === 'APPROVED') {
+    consumeNonce(mandate.nonce);
+  }
   globalLedger.addBlock(mandate.nonce, evalResult.status, evalResult.reason || null);
   return evalResult;
 }

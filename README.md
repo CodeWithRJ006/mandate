@@ -64,7 +64,7 @@ Once a valid mandate is generated, a reviewer can click any of these attacks to 
 
 ## 📊 Evaluation Rigor & Financial Asymmetry
 
-In high-throughput payment aggregation, failure modes are asymmetric. This system was rigorously tuned offline across a 48-case, 8-category stratified dataset to find the exact mathematical safety floor.
+In high-throughput payment aggregation, failure modes are asymmetric. This system was rigorously tuned offline across a 48-case, 8-category stratified dataset to find the optimal prototype operating threshold.
 
 * **False Positive (Type I Error):** A clean transaction is held by the policy engine for manual review. Assuming an average ticket size of INR 11,800, every 1% FPR introduces temporary settlement friction and a customer support arbitration cost of ~INR 120 per ticket. *(Note: Modeled assumptions).*
 * **False Negative (Type II Error):** An adversarial substitution bypasses verification and settles. This is unrecoverable chargeback liability. A single undetected INR 150 fee padded across 10,000 orders costs INR 15,00,000/month.
