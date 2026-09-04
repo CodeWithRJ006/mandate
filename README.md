@@ -1,5 +1,6 @@
 # Razorpay UAP - Agentic Recourse Layer
 **Track 2: AI Risk Manager / Defense-Only Application**
+[![CI](https://github.com/CodeWithRJ006/razorpay-uap-recourse/actions/workflows/ci.yml/badge.svg)](https://github.com/CodeWithRJ006/razorpay-uap-recourse/actions/workflows/ci.yml)
 
 An autonomous, cryptographically-secured recourse layer for the Unified Agent Protocol (UAP). This system enables AI agents to transact autonomously by enforcing a deterministic, tamper-proof security boundary between merchant fulfillment and user mandates.
 
