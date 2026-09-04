@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { generateKeysAndSign, evaluateDiff, tamperMandateExpiryAction, AgentExecutionTelemetry, MandateVerificationBundle } from './actions';
 import EvidenceDrawer from './components/EvidenceDrawer';
@@ -28,6 +28,19 @@ const computeRiskScore = (reason: string | null | undefined): number => {
 
 export default function Dashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isMounted, setIsMounted] = useState<boolean>(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    if (sessionStorage.getItem('uap_authed') === 'true') {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  const handleAuth = (state: boolean) => {
+    sessionStorage.setItem('uap_authed', state ? 'true' : 'false');
+    setIsAuthenticated(state);
+  };
   
   // User State
   const [keys, setKeys] = useState<any>(null);
@@ -209,14 +222,16 @@ export default function Dashboard() {
     }
   };
 
+  if (!isMounted) return null;
+
   return (
     <>
-      {!isAuthenticated && <CoverPage onComplete={() => setIsAuthenticated(true)} />}
+      {!isAuthenticated && <CoverPage onComplete={() => handleAuth(true)} />}
       
       <div className={`min-h-screen p-8 text-slate-200 bg-slate-950 transition-colors duration-500 ${flashColor} ${!isAuthenticated ? 'hidden' : ''}`}>
         <div className="absolute top-4 right-4 z-50">
           <button 
-            onClick={() => setIsAuthenticated(false)} 
+            onClick={() => handleAuth(false)} 
             className="text-xs font-mono font-bold text-red-400 hover:text-red-300 border border-red-500/30 bg-red-900/20 px-3 py-1 rounded transition-colors"
           >
             [ LOG OUT ]
