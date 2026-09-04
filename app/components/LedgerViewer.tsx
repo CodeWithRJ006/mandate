@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { getLedgerChain, tamperLedgerAction, verifyLedgerAction } from '../actions';
+import { getLedgerChain, tamperLedgerAction, verifyLedgerAction, resetLedgerAction } from '../actions';
 import type { LedgerBlock } from '../../lib/ledger';
 
 export default function LedgerViewer() {
@@ -26,11 +26,19 @@ export default function LedgerViewer() {
     await fetchLedger();
   };
 
+  const handleReset = async () => {
+    await resetLedgerAction();
+    await fetchLedger();
+  };
+
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-lg p-6 my-6 text-slate-200 font-sans text-sm shadow-xl">
       <div className="flex justify-between items-center mb-4 border-b border-slate-800 pb-2">
         <h3 className="text-xl font-bold text-white">Cryptographic Audit Ledger</h3>
-        <button onClick={fetchLedger} className="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded">Refresh</button>
+        <div className="space-x-2">
+          <button onClick={handleReset} className="text-xs bg-red-900/40 text-red-400 border border-red-800/50 hover:bg-red-800/60 px-3 py-1 rounded">Clear Data</button>
+          <button onClick={fetchLedger} className="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded">Refresh</button>
+        </div>
       </div>
 
       <div className={`mb-4 p-3 rounded border font-mono text-sm ${integrity.isValid ? 'bg-emerald-900/40 border-emerald-500/50 text-emerald-400' : 'bg-red-900/40 border-red-500/50 text-red-400'}`}>

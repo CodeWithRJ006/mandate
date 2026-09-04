@@ -81,3 +81,9 @@ export async function tamperLedgerAction(index: number, newVerdict: string) {
 export async function verifyLedgerAction() {
   return globalLedger.verifyChainIntegrity();
 }
+
+export async function resetLedgerAction() {
+  globalLedger.resetLedger();
+  return globalLedger.getChain();
+}
+

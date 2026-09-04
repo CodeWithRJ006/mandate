@@ -22,7 +22,7 @@ function loadChain(): LedgerBlock[] {
     if (Array.isArray(parsed) && parsed.length > 0) {
       return parsed;
     }
-  } catch (_e) { /* File not found or invalid JSON — start fresh */ }
+  } catch { /* File not found or invalid JSON — start fresh */ }
   // If file missing or invalid, start with genesis block
   return [createGenesisBlock()];
 }
@@ -102,6 +102,11 @@ class Ledger {
       // Intentionally do NOT update the hash to cause integrity failure.
       saveChain(this.chain);
     }
+  }
+
+  public resetLedger() {
+    this.chain = [createGenesisBlock()];
+    saveChain(this.chain);
   }
 }
 
