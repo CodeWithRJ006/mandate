@@ -8,6 +8,22 @@ import EvidenceDrawer from './components/EvidenceDrawer';
 import ManualTester from './components/ManualTester';
 import LedgerViewer from './components/LedgerViewer';
 
+const computeRiskScore = (reason: string | null | undefined): number => {
+  if (!reason) return 0;
+  switch (reason) {
+    case 'SIGNATURE_INVALID': return 100;
+    case 'UNREGISTERED_PUBLIC_KEY': return 100;
+    case 'NONCE_REUSED': return 100;
+    case 'MANDATE_EXPIRED': return 95;
+    case 'AMOUNT_EXCEEDED': return 90;
+    case 'QUANTITY_MISMATCH': return 85;
+    case 'SKU_MISMATCH': return 80;
+    case 'SKU_NUMERIC_DOWNGRADE': return 75;
+    case 'SKU_TIER_DOWNGRADE': return 75;
+    default: return 99;
+  }
+};
+
 export default function Dashboard() {
   // User State
   const [keys, setKeys] = useState<any>(null);
@@ -124,22 +140,6 @@ export default function Dashboard() {
       const payload = responseJson.data;
       setFulfillment(payload);
       setMerchantTelemetry(responseJson.telemetry);
-
-      const computeRiskScore = (reason: string | null | undefined): number => {
-        if (!reason) return 0;
-        switch (reason) {
-          case 'SIGNATURE_INVALID': return 100;
-          case 'UNREGISTERED_PUBLIC_KEY': return 100;
-          case 'NONCE_REUSED': return 100;
-          case 'MANDATE_EXPIRED': return 95;
-          case 'AMOUNT_EXCEEDED': return 90;
-          case 'QUANTITY_MISMATCH': return 85;
-          case 'SKU_MISMATCH': return 80;
-          case 'SKU_NUMERIC_DOWNGRADE': return 75;
-          case 'SKU_TIER_DOWNGRADE': return 75;
-          default: return 99;
-        }
-      };
 
       try {
         const evaluation = await evaluateDiff(
