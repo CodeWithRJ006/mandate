@@ -4,37 +4,43 @@ import { POLICY_CONFIG } from './config';
 
 export interface AgentKeys {
   publicKey: string;
-  privateKey: string;
+  privateKey: string; // Server-side only. Never forwarded to the client — see app/actions.ts.
 }
 
 export const nonceStore = new Set<string>();
 
-let envPubKey = process.env.DEMO_PUBLIC_KEY;
-let envPrivKey = process.env.DEMO_PRIVATE_KEY;
+// Key Management: Load DEMO_PRIVATE_KEY from environment variables only.
+// The matching public key is DERIVED from the private key — never stored separately —
+// eliminating any configuration mismatch risk.
+// In local dev (no env var), an ephemeral keypair is generated per cold start.
+let _privKey = process.env.DEMO_PRIVATE_KEY;
+let _pubKey: string;
 
-if (!envPubKey || !envPrivKey) {
+if (_privKey) {
+  // Derive public key from the supplied private key to guarantee correspondence
+  const keyObj = crypto.createPrivateKey(_privKey);
+  _pubKey = keyObj.export({ type: 'spki', format: 'pem' }) as string;
+} else {
   const { publicKey, privateKey } = crypto.generateKeyPairSync('ec', {
     namedCurve: 'prime256v1',
     publicKeyEncoding: { type: 'spki', format: 'pem' },
     privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
   });
-  envPubKey = publicKey;
-  envPrivKey = privateKey;
+  _privKey = privateKey;
+  _pubKey = publicKey;
 }
 
-export const DEMO_PUBLIC_KEY = envPubKey as string;
-export const DEMO_PRIVATE_KEY = envPrivKey as string;
+export const DEMO_PUBLIC_KEY = _pubKey;
+export const DEMO_PRIVATE_KEY = _privKey as string;
 
+// The registry is seeded strictly from the runtime-derived identity. No hardcoded legacy keys.
 export const keyRegistry = new Set<string>([
   DEMO_PUBLIC_KEY,
-  "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE2ngOmg6UfV/a80UmQ5Y/1DI4FW0G\nP7zd7ReKCorRrNkmHTS/9I347smuOWoK/sxMM6OKnMdzhnfidzx77NxA7A==\n-----END PUBLIC KEY-----\n"
 ]);
 
 export function generateAgentKeyPair(): AgentKeys {
-  // Hackathon Prototype Limitation Fix: 
-  // Returning a static keypair instead of crypto.generateKeyPairSync() 
-  // so that concurrent Vercel instances don't hit UNREGISTERED_PUBLIC_KEY errors
-  // due to the in-memory keyRegistry not syncing across warm instances.
+  // Returns the server-side static identity. The private key is used only for signing
+  // inside server actions and is never exposed in API responses to the browser.
   return {
     publicKey: DEMO_PUBLIC_KEY,
     privateKey: DEMO_PRIVATE_KEY,
