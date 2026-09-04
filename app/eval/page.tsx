@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import ManualTester from '../components/ManualTester';
-import { getSimilarity } from '@/lib/uap-logic';
+import { getSimilarity } from '@/lib/similarity';
 
 export default function EvalDashboard() {
   interface TestCase {

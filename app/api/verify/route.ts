@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { evaluateFulfillment, verifyMandate, consumeNonce, getSimilarity } from '@/lib/uap-logic';
+import { evaluateFulfillment, verifyMandate, consumeNonce } from '@/lib/uap-logic';
+import { getSimilarity } from '@/lib/similarity';
 import { POLICY_CONFIG } from '@/lib/config';
 import { globalLedger } from '@/lib/ledger';
 
