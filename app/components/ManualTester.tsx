@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 
-import { generateKeysAndSign } from '../actions';
+import { generateKeysAndSign, evaluateDiff } from '../actions';
 
 export default function ManualTester({ context }: { context?: 'main' | 'eval' }) {
   const [authorizedSku, setAuthorizedSku] = useState("Organic Apples");
@@ -10,13 +10,21 @@ export default function ManualTester({ context }: { context?: 'main' | 'eval' })
   const [fulfilledSku, setFulfilledSku] = useState("Organic Apples (1kg)");
   const [fulfilledAmount, setFulfilledAmount] = useState<string>("2030");
   const [actualQty, setActualQty] = useState<string>("1");
-  interface Explainability {
-    skuSimilarity?: number;
-    amountVariancePct?: number;
-    deltaAmount?: number;
-    statusMessage?: string;
+  interface EvalResult {
+    status?: 'APPROVED' | 'REJECTED';
+    verdict?: string;
+    reason?: string | null;
+    error?: string;
+    explainability?: {
+      skuSimilarity?: number;
+      amountVariancePct?: number;
+      deltaAmount?: number;
+      statusMessage?: string;
+      authorizedTotal?: number;
+      actualTotal?: number;
+    };
   }
-  const [result, setResult] = useState<{ verdict?: string; reason?: string | null; error?: string; explainability?: Explainability } | null>(null);
+  const [result, setResult] = useState<EvalResult | null>(null);
   const [loading, setLoading] = useState(false);
 
   type Preset = { authSku: string; authAmt: string; authQty: string; fullSku: string; fullAmt: string; fullQty: string };
@@ -42,27 +50,61 @@ export default function ManualTester({ context }: { context?: 'main' | 'eval' })
   async function handleEvaluate(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    
-    // Generate valid cryptographic signature for the arbitrary manual payload
-    const { augmentedPayload, signature, verificationBundle } = await generateKeysAndSign({
-      sku: authorizedSku,
-      authorized_amount: Number(authorizedAmount),
-      quantity: Number(mandateQty)
-    });
+    setResult(null);
 
     try {
-      const res = await fetch('/api/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mandate: { ...augmentedPayload, signature, publicKeyPem: verificationBundle.publicKeyPem },
-          fulfillment: { sku: fulfilledSku, actual_amount: Number(fulfilledAmount), quantity: Number(actualQty) }
-        })
+      // Step 1: Sign the mandate using the server's registered identity (server action)
+      const { augmentedPayload, signature, verificationBundle } = await generateKeysAndSign({
+        sku: authorizedSku,
+        authorized_amount: Number(authorizedAmount),
+        quantity: Number(mandateQty)
       });
-      const data = await res.json();
-      setResult(data);
-    } catch (e: unknown) {
-      setResult({ error: (e as Error).message || 'Failed to communicate with API' });
+
+      const fulfillment = {
+        sku: fulfilledSku,
+        actual_amount: Number(fulfilledAmount),
+        quantity: Number(actualQty)
+      };
+
+      // Step 2: Evaluate via server action — avoids cross-instance keyRegistry mismatch on Vercel
+      const evalResult = await evaluateDiff(
+        augmentedPayload,
+        fulfillment,
+        signature,
+        verificationBundle.publicKeyPem
+      );
+
+      // Step 3: Compute explainability client-side for display
+      const authTotal = Number(authorizedAmount) * Number(mandateQty);
+      const actualTotal = Number(fulfilledAmount) * Number(actualQty);
+      const delta = actualTotal - authTotal;
+      const variancePct = authTotal > 0 ? parseFloat(((delta / authTotal) * 100).toFixed(2)) : 0;
+
+      // Compute SKU similarity (Sørensen-Dice) client-side for display
+      const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const bigrams = (s: string) => { const b = new Set<string>(); for (let i = 0; i < s.length - 1; i++) b.add(s.substring(i, i + 2)); return b; };
+      const n1 = norm(authorizedSku), n2 = norm(fulfilledSku);
+      const bg1 = bigrams(n1), bg2 = bigrams(n2);
+      let inter = 0; for (const bg of bg1) { if (bg2.has(bg)) inter++; }
+      const similarity = n1 === n2 ? 1 : (n1.length < 2 || n2.length < 2) ? 0 : (2 * inter) / (bg1.size + bg2.size);
+
+      setResult({
+        status: evalResult.status,
+        verdict: evalResult.status,
+        reason: evalResult.reason || null,
+        explainability: {
+          skuSimilarity: similarity,
+          amountVariancePct: variancePct,
+          deltaAmount: delta,
+          authorizedTotal: authTotal,
+          actualTotal: actualTotal,
+          statusMessage: evalResult.status === 'APPROVED'
+            ? 'Approved: Within thresholds'
+            : `Rejected: ${evalResult.reason?.replace(/_/g, ' ')}`
+        }
+      });
+    } catch (err: unknown) {
+      setResult({ error: (err as Error).message || 'Failed to evaluate transaction' });
     } finally {
       setLoading(false);
     }
@@ -130,21 +172,86 @@ export default function ManualTester({ context }: { context?: 'main' | 'eval' })
         </button>
       </form>
 
+      {loading && (
+        <div className="mt-6 p-4 rounded-lg border border-slate-700 bg-slate-900/50 text-center text-slate-400 animate-pulse text-sm">
+          ⏳ Running cryptographic verification &amp; policy diff engine...
+        </div>
+      )}
+
       {result && (
-        <div className={`mt-6 p-4 rounded-lg border ${result.verdict === 'APPROVED' ? 'bg-emerald-950/40 border-emerald-500/50' : 'bg-red-950/40 border-red-500/50'}`}>
-          <div className="flex justify-between items-center mb-3 border-b border-slate-800/50 pb-2">
-            <span className={`font-black text-lg ${result.verdict === 'APPROVED' ? 'text-emerald-400' : 'text-red-400'}`}>
-              {result.error ? 'ERROR' : result.verdict}
+        <div className={`mt-6 p-4 rounded-lg border ${
+          result.error
+            ? 'bg-orange-950/40 border-orange-500/50'
+            : result.verdict === 'APPROVED'
+              ? 'bg-emerald-950/40 border-emerald-500/50'
+              : 'bg-red-950/40 border-red-500/50'
+        }`}>
+          {/* Header */}
+          <div className="flex justify-between items-center mb-3 border-b border-slate-800/50 pb-3">
+            <span className={`font-black text-2xl tracking-tight ${
+              result.error ? 'text-orange-400' : result.verdict === 'APPROVED' ? 'text-emerald-400' : 'text-red-400'
+            }`}>
+              {result.error ? '⚠ ERROR' : result.verdict === 'APPROVED' ? '✓ APPROVED' : '✗ REJECTED'}
             </span>
-            <span className="text-xs font-medium text-slate-400 uppercase">
-              {result.error || result.reason || "Within Authorized Parameters"}
+            <span className={`text-xs font-bold uppercase tracking-widest px-2 py-1 rounded ${
+              result.error ? 'bg-orange-900/50 text-orange-300' : result.verdict === 'APPROVED' ? 'bg-emerald-900/50 text-emerald-300' : 'bg-red-900/50 text-red-300'
+            }`}>
+              {result.error ? result.error : result.reason ? result.reason.replace(/_/g, ' ') : 'WITHIN PARAMETERS'}
             </span>
           </div>
-          {!result.error && (
-            <div className="text-sm space-y-1.5 text-slate-300">
-              <p>SKU Similarity Score: <span className="font-mono bg-slate-900 px-1 py-0.5 rounded text-white">{((result.explainability?.skuSimilarity || 0) * 100).toFixed(1)}%</span> <span className="text-xs text-slate-500">(Threshold: 60%)</span></p>
-              <p>Amount Variance: <span className="font-mono bg-slate-900 px-1 py-0.5 rounded text-white">{result.explainability?.amountVariancePct || 0}%</span> <span className="text-xs text-slate-500">(Max Allowed: 2.0%)</span></p>
-              <p>Delta: <span className="font-bold">&#8377;{result.explainability?.deltaAmount || 0}</span> <span className="text-xs text-slate-400 italic">({result.explainability?.statusMessage || ''})</span></p>
+
+          {result.error && (
+            <p className="text-sm text-orange-300 mt-1">
+              The policy engine could not evaluate this request. Check your inputs and try again.
+            </p>
+          )}
+
+          {!result.error && result.explainability && (
+            <div className="text-sm space-y-2 text-slate-300">
+              {/* Financial Summary */}
+              <div className="grid grid-cols-3 gap-3 mb-3">
+                <div className="bg-slate-900/60 rounded p-2 text-center">
+                  <p className="text-xs text-slate-500 mb-0.5">Authorized</p>
+                  <p className="font-mono font-bold text-blue-300">₹{result.explainability.authorizedTotal?.toLocaleString()}</p>
+                </div>
+                <div className="bg-slate-900/60 rounded p-2 text-center">
+                  <p className="text-xs text-slate-500 mb-0.5">Actual</p>
+                  <p className="font-mono font-bold text-white">₹{result.explainability.actualTotal?.toLocaleString()}</p>
+                </div>
+                <div className="bg-slate-900/60 rounded p-2 text-center">
+                  <p className="text-xs text-slate-500 mb-0.5">Delta</p>
+                  <p className={`font-mono font-bold ${(result.explainability.deltaAmount || 0) > 0 ? 'text-red-300' : 'text-emerald-300'}`}>
+                    {(result.explainability.deltaAmount || 0) >= 0 ? '+' : ''}₹{result.explainability.deltaAmount}
+                  </p>
+                </div>
+              </div>
+
+              {/* Policy Metrics */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">SKU Similarity (Sørensen-Dice)</span>
+                  <span className={`font-mono bg-slate-900 px-2 py-0.5 rounded font-bold ${
+                    (result.explainability.skuSimilarity || 0) >= 0.6 ? 'text-emerald-300' : 'text-red-300'
+                  }`}>
+                    {((result.explainability.skuSimilarity || 0) * 100).toFixed(1)}%
+                    <span className="text-slate-500 font-normal text-xs ml-1">(min 60%)</span>
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">Amount Variance</span>
+                  <span className={`font-mono bg-slate-900 px-2 py-0.5 rounded font-bold ${
+                    Math.abs(result.explainability.amountVariancePct || 0) <= 2.0 ? 'text-emerald-300' : 'text-red-300'
+                  }`}>
+                    {result.explainability.amountVariancePct}%
+                    <span className="text-slate-500 font-normal text-xs ml-1">(max 2.0%)</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Status message */}
+              <p className="text-xs text-slate-500 italic mt-2 border-t border-slate-800/50 pt-2">
+                {result.explainability.statusMessage}
+              </p>
             </div>
           )}
         </div>
