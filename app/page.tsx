@@ -78,11 +78,11 @@ export default function Dashboard() {
       setVerificationBundle(verificationBundle);
       setFulfillment(null);
       setMerchantTelemetry(null);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
       setApiWarning('Critical network failure triggering fallback execution.');
       setStatus('BLOCKED');
-      setResultReason(e.message || 'Network Failure');
+      setResultReason((e as Error).message || 'Network Failure');
       setRiskScore(99);
     }
     setIsProcessing(false);
@@ -144,18 +144,18 @@ export default function Dashboard() {
         }
         
         setResultReason(evaluation.reason || null);
-      } catch (evalError: any) {
+      } catch (evalError: unknown) {
         setStatus('BLOCKED');
         triggerFlash('bg-red-500/20');
         setRiskScore(99);
-        setResultReason(evalError.message || 'Evaluation Engine Error');
+        setResultReason((evalError as Error).message || 'Evaluation Engine Error');
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
       setApiWarning('Critical network failure triggering fallback execution.');
       setStatus('BLOCKED');
       setRiskScore(99);
-      setResultReason(e.message || 'Submission Failed');
+      setResultReason((e as Error).message || 'Submission Failed');
     }
     setIsProcessing(false);
   };

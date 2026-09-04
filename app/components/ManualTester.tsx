@@ -61,8 +61,8 @@ export default function ManualTester({ context }: { context?: 'main' | 'eval' })
       });
       const data = await res.json();
       setResult(data);
-    } catch (e: any) {
-      setResult({ error: e.message || 'Failed to communicate with API' });
+    } catch (e: unknown) {
+      setResult({ error: (e as Error).message || 'Failed to communicate with API' });
     } finally {
       setLoading(false);
     }
