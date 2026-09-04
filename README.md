@@ -64,7 +64,7 @@ Once a valid mandate is generated, a reviewer can click any of these attacks to 
 
 ## 📊 Evaluation Rigor & Financial Asymmetry
 
-In high-throughput payment aggregation, failure modes are asymmetric. This system was rigorously tuned offline across a 45-case, 8-category stratified dataset to find the exact mathematical safety floor.
+In high-throughput payment aggregation, failure modes are asymmetric. This system was rigorously tuned offline across a 48-case, 8-category stratified dataset to find the exact mathematical safety floor.
 
 * **False Positive (Type I Error):** A clean transaction is held by the policy engine for manual review. Assuming an average ticket size of INR 11,800, every 1% FPR introduces temporary settlement friction and a customer support arbitration cost of ~INR 120 per ticket. *(Note: Modeled assumptions).*
 * **False Negative (Type II Error):** An adversarial substitution bypasses verification and settles. This is unrecoverable chargeback liability. A single undetected INR 150 fee padded across 10,000 orders costs INR 15,00,000/month.
@@ -74,9 +74,9 @@ We explicitly prioritize **100% Recall** against unrecoverable financial loss. D
 
 If we pushed the threshold to `0.55` to reduce friction, these known fraud vectors would slip through the training data. Therefore, we firmly anchored our threshold at **>0.60 similarity** and **2.0% price tolerance**. Once this threshold was frozen, we applied it to the pristine **30% Held-Out Test Set**, which successfully maintained 100% Recall on completely unseen boundary attacks.
 
-*(Note: The 45-case dataset is a synthetic micro-benchmark designed for a hackathon proof-of-concept. A production risk engine would derive this threshold dynamically from tens of thousands of historical chargeback records.)*
+*(Note: The 48-case dataset is a synthetic micro-benchmark designed for a hackathon proof-of-concept. A production risk engine would derive this threshold dynamically from tens of thousands of historical chargeback records.)*
 
-**The Tradeoff:** This safety floor drives the tuning False Positive Rate to 15.4%. This 15.4% consists entirely of genuine semantic variants (e.g., "Bluetooth Speaker" vs "BT Speaker", which scores 0.461). We intentionally accept that these benign abbreviations require manual review to completely eliminate Type II substitution attacks. *A strict AI risk manager owns their operational friction rather than hiding it.*
+**The Tradeoff:** This safety floor drives the tuning False Positive Rate to 7.7%. This 7.7% consists entirely of extreme genuine semantic variants (e.g., "Bluetooth Speaker" vs "BT Speaker 5.0") that the native Sørensen-Dice engine legitimately catches as disjointed. We intentionally accept that these benign edge cases require manual review to completely eliminate Type II substitution attacks. *A strict AI risk manager owns their operational friction rather than hiding it.*
 
 ---
 

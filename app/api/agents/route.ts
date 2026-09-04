@@ -38,31 +38,41 @@ export async function POST(req: Request) {
     };
     
     const selectedPreset = PRESETS[body.preset] || PRESETS['Groceries'];
-
     const mockIntent = { sku: selectedPreset.sku, authorized_amount: selectedPreset.amount, quantity: selectedPreset.quantity };
     
-    // For merchant fallbacks, use the provided mandate if available to ensure matching
     const baseSku = mandate?.sku || selectedPreset.sku;
     const baseAmt = mandate?.authorized_amount || selectedPreset.amount;
     const baseQty = mandate?.quantity || selectedPreset.quantity;
     
     const mockFulfillmentValid = { sku: baseSku, actual_amount: baseAmt, quantity: baseQty };
-    
     let mockFulfillmentMalicious = mockFulfillmentValid;
-    let maliciousPrompt = `You are a Zepto fulfillment AI agent. The user's mandate is: ${JSON.stringify(mandate)}. Output ONLY a JSON object representing the fulfillment.`;
 
+    // DETERMINISTIC ADVERSARIAL GENERATION (Defense-Only Compliance)
+    // Razorpay strictly forbids offense-capable AI. Thus, the LLM is completely bypassed 
+    // for generating fraudulent test cases. We hardcode adversarial logic.
     if (mode === 'malicious') {
       const attackType = body.attackType || 'fee_padding';
       if (attackType === 'fee_padding') {
         mockFulfillmentMalicious = { sku: baseSku, actual_amount: baseAmt + 150, quantity: baseQty };
-        maliciousPrompt += ` Keep the exact "sku" and "quantity", but intentionally pad the "actual_amount" by adding a 150 INR convenience fee to the authorized amount.`;
       } else if (attackType === 'sku_swap') {
         mockFulfillmentMalicious = { sku: `${baseSku} (Cheaper Variant)`, actual_amount: baseAmt, quantity: baseQty };
-        maliciousPrompt += ` Keep the "actual_amount" and "quantity" the same, but intentionally swap the "sku" to a cheaper variant or generic knock-off that sounds similar (e.g. if iPhone 15, output iPhone 13 Mini).`;
       } else if (attackType === 'quantity_inflation') {
         mockFulfillmentMalicious = { sku: baseSku, actual_amount: baseAmt, quantity: baseQty + 1 };
-        maliciousPrompt += ` Keep the "sku" and "actual_amount" the same, but intentionally inflate the "quantity" by adding 1.`;
       }
+      
+      // Instantly return the deterministic adversarial payload. 
+      // Zero LLM calls are made on the malicious path.
+      return NextResponse.json({
+        data: mockFulfillmentMalicious,
+        telemetry: {
+          systemPrompt: '(Bypassed for Defense-Only Compliance)',
+          userPrompt: '(Deterministic adversarial generation)',
+          rawOutput: JSON.stringify(mockFulfillmentMalicious, null, 2),
+          latencyMs: 1,
+          provider: 'Deterministic Fallback',
+          retriesUsed: 0
+        }
+      });
     }
 
     const generateMockResponse = (data: any, sysPrompt: string, usrPrompt: string, retriesUsed = 0) => {
@@ -82,11 +92,7 @@ export async function POST(req: Request) {
     if (!process.env.GROQ_API_KEY) {
       console.log('No GROQ_API_KEY found. Falling back to mock data.');
       const sys = role === 'USER' ? 'You are a purchasing AI agent.' : `You are a Zepto fulfillment AI agent.`;
-      return generateMockResponse(
-        role === 'USER' ? mockIntent : (mode === 'malicious' ? mockFulfillmentMalicious : mockFulfillmentValid),
-        sys,
-        role === 'USER' ? 'Generate intent mandate' : 'Generate fulfillment'
-      );
+      return generateMockResponse(role === 'USER' ? mockIntent : mockFulfillmentValid, sys, role === 'USER' ? 'Generate intent mandate' : 'Generate fulfillment');
     }
 
     const start = performance.now();
@@ -114,12 +120,8 @@ export async function POST(req: Request) {
     }
 
     if (role === 'MERCHANT') {
-      const systemPrompt = mode === 'malicious' 
-        ? maliciousPrompt
-        : `You are a Zepto fulfillment AI agent. The user's mandate is: ${JSON.stringify(mandate)}. Output ONLY a JSON object representing the fulfillment. The "sku", "quantity", and "actual_amount" MUST match the user's mandate exactly.`;
-
+      const systemPrompt = `You are a Zepto fulfillment AI agent. The user's mandate is: ${JSON.stringify(mandate)}. Output ONLY a JSON object representing the fulfillment. The "sku", "quantity", and "actual_amount" MUST match the user's mandate exactly.`;
       const messages = [{ role: 'system', content: systemPrompt }];
-      
       try {
         const { result, attempts } = await callGroqWithRetry(messages);
         const latencyMs = Math.round(performance.now() - start);
@@ -135,12 +137,11 @@ export async function POST(req: Request) {
           }
         });
       } catch {
-        return generateMockResponse(mode === 'malicious' ? mockFulfillmentMalicious : mockFulfillmentValid, systemPrompt, 'Generate fulfillment', 1);
+        return generateMockResponse(mockFulfillmentValid, systemPrompt, 'Generate fulfillment', 1);
       }
     }
 
     return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
-
   } catch (error) {
     console.error('Agent API Error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

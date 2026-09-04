@@ -70,6 +70,7 @@ export function verifyMandate(payload: Record<string, any>, signature: string, p
     return { isValid: false, reason: 'MANDATE_EXPIRED' };
   }
   
+  // Only checks if reused. Does NOT consume the nonce. Consumption happens on approval.
   if (nonceStore.has(payload.nonce)) {
     return { isValid: false, reason: 'NONCE_REUSED' };
   }
@@ -79,13 +80,15 @@ export function verifyMandate(payload: Record<string, any>, signature: string, p
   verify.update(payloadString);
   verify.end();
   
-  const isValidSig = verify.verify(publicKeyPem, signature, 'base64');
-  if (!isValidSig) {
+  if (!verify.verify(publicKeyPem, signature, 'base64')) {
     return { isValid: false, reason: 'SIGNATURE_INVALID' };
   }
   
-  nonceStore.add(payload.nonce);
   return { isValid: true };
+}
+
+export function consumeNonce(nonce: string): void {
+  nonceStore.add(nonce);
 }
 
 export interface MandateContext {
@@ -144,6 +147,10 @@ export function evaluateFulfillment(
 ): EvaluationResult {
   const mandateQty = mandate.quantity ?? 1;
   const fulfillmentQty = fulfillment.quantity ?? 1;
+  
+  if (mandateQty <= 0 || fulfillmentQty <= 0 || !Number.isInteger(mandateQty) || !Number.isInteger(fulfillmentQty)) {
+    return { status: 'REJECTED', reason: 'QUANTITY_MISMATCH' };
+  }
   
   if (mandateQty !== fulfillmentQty) {
     return { status: 'REJECTED', reason: 'QUANTITY_MISMATCH' };

@@ -1,4 +1,4 @@
-import { generateAgentKeyPair, signMandate, verifyMandate, evaluateFulfillment } from '../lib/uap-logic';
+import { generateAgentKeyPair, signMandate, verifyMandate, evaluateFulfillment, consumeNonce } from '../lib/uap-logic';
 import { POLICY_CONFIG } from '../lib/config';
 
 describe('UAP Logic (ECDSA and Risk Engine)', () => {
@@ -60,6 +60,9 @@ describe('UAP Logic (ECDSA and Risk Engine)', () => {
       // First verification consumes the nonce
       const firstCheck = verifyMandate(augmentedPayload, signature, keys.publicKey);
       expect(firstCheck.isValid).toBe(true);
+      
+      // Manually consume the nonce as a successful fulfillment would
+      consumeNonce(augmentedPayload.nonce);
       
       // Second verification rejects it
       const secondCheck = verifyMandate(augmentedPayload, signature, keys.publicKey);

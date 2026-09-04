@@ -346,12 +346,12 @@ export default function Dashboard() {
           <h2 className="text-xl font-semibold mb-4 text-white border-b border-slate-800 pb-2">Razorpay Audit Log</h2>
           
           <div className="flex justify-between items-end mb-6">
-            <div>
-              <p className="text-slate-400 text-sm">Merchant Trust Score</p>
-              <div className={`text-5xl font-black transition-all duration-700 ${trustScore === 99 ? 'text-emerald-400' : 'text-red-400'}`}>
-                {trustScore}
+              <div>
+                <p className="text-slate-400 text-sm">Demo Risk State</p>
+                <div className={`text-5xl font-black transition-all duration-700 ${trustScore === 99 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {trustScore}
+                </div>
               </div>
-            </div>
           </div>
 
           <div className="space-y-4">

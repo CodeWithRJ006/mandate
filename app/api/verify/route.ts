@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { evaluateFulfillment, verifyMandate } from '@/lib/uap-logic';
+import { evaluateFulfillment, verifyMandate, consumeNonce } from '@/lib/uap-logic';
 import { POLICY_CONFIG } from '@/lib/config';
 import { globalLedger } from '@/lib/ledger';
 
@@ -45,6 +45,11 @@ export async function POST(req: Request) {
     }
 
     const result = evaluateFulfillment(pureMandate, fulfillment, POLICY_CONFIG);
+    
+    if (result.status === 'APPROVED') {
+      consumeNonce(pureMandate.nonce);
+    }
+
     globalLedger.addBlock(pureMandate.nonce, result.status, result.reason || null);
 
     return NextResponse.json({

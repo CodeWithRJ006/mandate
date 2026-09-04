@@ -54,7 +54,7 @@ function createSignedMandate(overrides: Record<string, unknown> = {}) {
   } as any;
 }
 
-// 45 Test Cases Across 8 Categories
+// 48 Test Cases Across 8 Categories
 export const DATASET: TestCase[] = [
   // 1. Clean Match (8 cases)
   ...Array.from({ length: 8 }, (_, i) => ({
