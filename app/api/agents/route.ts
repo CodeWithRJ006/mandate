@@ -55,7 +55,8 @@ export async function POST(req: Request) {
       if (attackType === 'fee_padding') {
         mockFulfillmentMalicious = { sku: baseSku, actual_amount: baseAmt + 150, quantity: baseQty };
       } else if (attackType === 'sku_swap') {
-        mockFulfillmentMalicious = { sku: `${baseSku} (Cheaper Variant)`, actual_amount: baseAmt, quantity: baseQty };
+        // Use a string that shares very few bigrams to ensure similarity < 0.60
+        mockFulfillmentMalicious = { sku: `Generic Alternative`, actual_amount: baseAmt, quantity: baseQty };
       } else if (attackType === 'quantity_inflation') {
         mockFulfillmentMalicious = { sku: baseSku, actual_amount: baseAmt, quantity: baseQty + 1 };
       }

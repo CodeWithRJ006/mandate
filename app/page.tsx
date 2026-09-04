@@ -110,15 +110,33 @@ export default function Dashboard() {
     setApiWarning('');
 
     try {
-      let currentMandate = { ...mandate };
-      let currentSignature = signature;
+      // Auto-refresh nonce for every test to prevent previous tests from bricking the mandate
+      const freshGen = await generateKeysAndSign({
+        sku: mandate.sku,
+        authorized_amount: mandate.authorized_amount,
+        quantity: mandate.quantity
+      });
+      let currentMandate = freshGen.augmentedPayload;
+      let currentSignature = freshGen.signature;
       
       if (attackType === 'signature_tamper') {
         currentMandate.authorized_amount = 999999;
       } else if (attackType === 'expired_mandate') {
-        const result = await tamperMandateExpiryAction(mandate);
+        const result = await tamperMandateExpiryAction({
+          sku: mandate.sku,
+          authorized_amount: mandate.authorized_amount,
+          quantity: mandate.quantity
+        });
         currentMandate = result.augmentedPayload;
         currentSignature = result.signature;
+      } else if (attackType === 'nonce_replay') {
+        // Burn the nonce first by submitting a valid fulfillment
+        await evaluateDiff(
+          currentMandate,
+          { sku: currentMandate.sku, actual_amount: currentMandate.authorized_amount, quantity: currentMandate.quantity },
+          currentSignature,
+          keys.publicKey
+        );
       }
 
       const res = await fetch('/api/agents', {
