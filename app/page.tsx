@@ -8,6 +8,8 @@ import EvidenceDrawer from './components/EvidenceDrawer';
 import ManualTester from './components/ManualTester';
 import LedgerViewer from './components/LedgerViewer';
 
+import CoverPage from './components/CoverPage';
+
 const computeRiskScore = (reason: string | null | undefined): number => {
   if (!reason) return 0;
   switch (reason) {
@@ -25,6 +27,8 @@ const computeRiskScore = (reason: string | null | undefined): number => {
 };
 
 export default function Dashboard() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  
   // User State
   const [keys, setKeys] = useState<any>(null);
   const [mandate, setMandate] = useState<any>(null);
@@ -206,9 +210,20 @@ export default function Dashboard() {
   };
 
   return (
-    <div className={`min-h-screen p-8 text-slate-200 bg-slate-950 transition-colors duration-500 ${flashColor}`}>
-      <header className="mb-10 text-center relative max-w-6xl mx-auto">
-        <h1 className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 tracking-tight">
+    <>
+      {!isAuthenticated && <CoverPage onComplete={() => setIsAuthenticated(true)} />}
+      
+      <div className={`min-h-screen p-8 text-slate-200 bg-slate-950 transition-colors duration-500 ${flashColor} ${!isAuthenticated ? 'hidden' : ''}`}>
+        <div className="absolute top-4 right-4 z-50">
+          <button 
+            onClick={() => setIsAuthenticated(false)} 
+            className="text-xs font-mono font-bold text-red-400 hover:text-red-300 border border-red-500/30 bg-red-900/20 px-3 py-1 rounded transition-colors"
+          >
+            [ LOG OUT ]
+          </button>
+        </div>
+        <header className="mb-10 text-center relative max-w-6xl mx-auto">
+          <h1 className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 tracking-tight">
           Mandate
         </h1>
         <p className="mt-3 text-lg font-medium text-slate-300">Trust the intent. Verify the action.</p>
@@ -473,5 +488,6 @@ export default function Dashboard() {
         <LedgerViewer />
       </div>
     </div>
+    </>
   );
 }

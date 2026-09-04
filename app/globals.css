@@ -34,3 +34,184 @@ body {
     opacity: 0.6;
   }
 }
+
+/* =========================================
+   1. RESET & NATIVE CUSTOM CURSOR
+========================================= */
+* {
+    cursor: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5.5 3L18.5 11L12.5 12.5L10 19L5.5 3Z' fill='%23111' stroke='%23FFF' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E"), auto !important;
+}
+
+button, .hover-trigger {
+    cursor: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5.5 3L18.5 11L12.5 12.5L10 19L5.5 3Z' fill='%233A3BFF' stroke='%23FFF' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E"), pointer !important;
+}
+
+/* =========================================
+   2. LANDING PAGE (65/35 SPLIT)
+========================================= */
+.landing-page {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    background-color: #FAFAFA;
+    z-index: 50;
+    transition: opacity 0.6s ease;
+}
+
+.left-panel {
+    width: 65%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 0 6% 0 8%;
+    background-color: #FAFAFA;
+}
+
+.product-badge {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #3A3BFF;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 1.2rem;
+}
+
+.brand-title {
+    font-family: "Syne", sans-serif;
+    font-size: clamp(3.8rem, 6vw, 6.5rem);
+    font-weight: 800;
+    color: #111;
+    letter-spacing: -2px;
+    margin-bottom: 0.6rem;
+    text-transform: uppercase;
+    line-height: 1;
+}
+
+.tagline {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: clamp(1.4rem, 2vw, 2.2rem);
+    font-weight: 700;
+    color: #111;
+    margin-bottom: 1.5rem;
+    letter-spacing: -0.5px;
+}
+
+.features-list {
+    font-family: "VT323", monospace;
+    font-size: 1.4rem;
+    color: #555;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 0.8rem;
+}
+
+.description {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 1.05rem;
+    color: #666;
+    margin-bottom: 2.5rem;
+    max-width: 80%;
+    line-height: 1.6;
+    font-weight: 600;
+}
+
+.get-started-btn {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    padding: 1.25rem 3.2rem;
+    color: #FFF;
+    background-color: #111;
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+    transition: all 0.3s ease;
+}
+
+.get-started-btn:hover {
+    background-color: #3A3BFF;
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 16px 36px rgba(58, 59, 255, 0.35);
+}
+
+.right-panel {
+    width: 35%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2.5rem;
+    background-color: #EFEFEF;
+}
+
+.floating-art {
+    width: 100%;
+    max-height: 80vh;
+    object-fit: contain;
+    animation: bounceFloat 5s ease-in-out infinite;
+}
+
+@keyframes bounceFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-16px); }
+}
+
+/* =========================================
+   3. DATA HANDS LOADING STAGE (bg.jpg)
+========================================= */
+.loading-stage {
+    position: absolute;
+    inset: 0;
+    background-color: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 60;
+    transition: opacity 0.5s ease;
+}
+
+.hand-canvas {
+    position: absolute;
+    top: 50%;
+    height: 100vh;
+    width: 50vw;
+    object-fit: cover;
+    z-index: 61;
+}
+
+.retro-modal {
+    position: relative;
+    z-index: 65;
+    width: 400px;
+    background-color: #000;
+    border: 2px solid #FFF;
+    box-shadow: 6px 6px 0px rgba(255, 255, 255, 0.25);
+    font-family: "VT323", monospace;
+}
+.modal-titlebar {
+    background-color: #FFF;
+    color: #000;
+    padding: 4px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.3rem;
+    font-weight: bold;
+}
+.window-btns span { border: 1px solid #000; padding: 0 5px; margin-left: 4px; }
+.modal-content { padding: 25px 20px; color: #FFF; text-align: center; }
+.terminal-log { font-size: 1.4rem; letter-spacing: 2px; margin-bottom: 15px; }
+.progress-frame { border: 2px solid #FFF; padding: 3px; margin-bottom: 12px; }
+.progress-bar { display: flex; gap: 2px; height: 24px; width: 100%; }
+.progress-block { flex: 1; background-color: #222; }
+.progress-block.filled { background-color: #3A3BFF; box-shadow: 0 0 8px rgba(58, 59, 255, 0.8); }
+.telemetry-row { display: flex; justify-content: space-between; font-size: 1.2rem; color: #777; }
+
+.show { opacity: 1 !important; pointer-events: auto !important; }
+.hide { opacity: 0 !important; pointer-events: none !important; }
+
