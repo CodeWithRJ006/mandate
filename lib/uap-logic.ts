@@ -104,12 +104,37 @@ export interface FulfillmentContext {
 
 export interface EvaluationResult {
   status: 'APPROVED' | 'REJECTED';
-  reason?: 'SKU_MISMATCH' | 'AMOUNT_EXCEEDED' | 'QUANTITY_MISMATCH';
+  reason?: 'SKU_MISMATCH' | 'AMOUNT_EXCEEDED' | 'QUANTITY_MISMATCH' | 'SKU_NUMERIC_DOWNGRADE' | 'SKU_TIER_DOWNGRADE';
 }
 
 export interface PolicyConfig {
   tolerancePct?: number;
   similarityThreshold?: number;
+}
+
+export function getSimilarity(s1: string, s2: string): number {
+  const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const getBigrams = (str: string) => {
+    const bigrams = new Set<string>();
+    for (let i = 0; i < str.length - 1; i++) {
+      bigrams.add(str.substring(i, i + 2));
+    }
+    return bigrams;
+  };
+  
+  const norm1 = normalize(s1);
+  const norm2 = normalize(s2);
+  
+  if (norm1 === norm2) return 1;
+  if (norm1.length < 2 || norm2.length < 2) return 0;
+  
+  const bg1 = getBigrams(norm1);
+  const bg2 = getBigrams(norm2);
+  let intersection = 0;
+  for (const bg of bg1) {
+    if (bg2.has(bg)) intersection++;
+  }
+  return (2.0 * intersection) / (bg1.size + bg2.size);
 }
 
 export function evaluateFulfillment(
@@ -147,42 +172,29 @@ export function evaluateFulfillment(
   }
 
   // 3. Numeric Downgrade Guard (Version/Tier protection)
-  // Fraudsters exploit string similarity by keeping brand words ("Pro Max") but changing the version number ("15" -> "11").
-  const extractNumbers = (str: string) => (str.match(/\d+/g) || []);
+  const extractNumbers = (str: string): string[] => (str.match(/\d+/g) || []);
   const mandateNums = extractNumbers(mandate.sku || "");
   const fulfillmentNums = extractNumbers(fulfillment.sku || "");
   
-  // If the mandate specified numeric versions (e.g., "15", "256"), the fulfillment MUST preserve them.
   const isNumericDowngrade = mandateNums.some(num => !fulfillmentNums.includes(num));
   if (isNumericDowngrade) {
     return { status: 'REJECTED', reason: 'SKU_NUMERIC_DOWNGRADE' };
   }
 
-  // 4. Native Sørensen-Dice Similarity (Zero-dependency, Case/Whitespace Normalized)
-  const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
-  const getBigrams = (str: string) => {
-    const bigrams = new Set<string>();
-    for (let i = 0; i < str.length - 1; i++) {
-      bigrams.add(str.substring(i, i + 2));
-    }
-    return bigrams;
-  };
+  // 4. Tier Downgrade Guard
+  const tierKeywords = ['pro', 'max', 'ultra', 'plus', 'premium'];
+  const mLower = (mandate.sku || "").toLowerCase();
+  const fLower = (fulfillment.sku || "").toLowerCase();
   
-  const normMandate = normalize(mandate.sku || "");
-  const normFulfill = normalize(fulfillment.sku || "");
-  
-  let similarity = 0;
-  if (normMandate === normFulfill) {
-    similarity = 1;
-  } else if (normMandate.length > 1 && normFulfill.length > 1) {
-    const bg1 = getBigrams(normMandate);
-    const bg2 = getBigrams(normFulfill);
-    let intersection = 0;
-    for (const bg of bg1) {
-      if (bg2.has(bg)) intersection++;
-    }
-    similarity = (2.0 * intersection) / (bg1.size + bg2.size);
+  const isTierDowngrade = tierKeywords.some(tier => 
+    mLower.includes(tier) && !fLower.includes(tier)
+  );
+  if (isTierDowngrade) {
+    return { status: 'REJECTED', reason: 'SKU_TIER_DOWNGRADE' };
   }
+
+  // 5. Native Sørensen-Dice Similarity
+  const similarity = getSimilarity(mandate.sku || "", fulfillment.sku || "");
 
   if (similarity < (config.similarityThreshold ?? sim)) {
     return { status: 'REJECTED', reason: 'SKU_MISMATCH' };

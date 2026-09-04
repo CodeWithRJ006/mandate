@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import ManualTester from '../components/ManualTester';
-import stringSimilarity from 'string-similarity';
+import { getSimilarity } from '@/lib/uap-logic';
 
 export default function EvalDashboard() {
   interface TestCase {
@@ -64,7 +64,7 @@ export default function EvalDashboard() {
           isFlagged = true; reason = 'QUANTITY_MISMATCH';
         } else if (actTotal > authTotal * (1 + t)) {
           isFlagged = true; reason = 'AMOUNT_EXCEEDED';
-        } else if (stringSimilarity.compareTwoStrings(tc.mandate.sku, tc.fulfillment.sku) < s) {
+        } else if (getSimilarity(tc.mandate.sku, tc.fulfillment.sku) < s) {
           isFlagged = true; reason = 'SKU_MISMATCH';
         }
       }
