@@ -31,10 +31,13 @@ export default function Dashboard() {
   const [isMounted, setIsMounted] = useState<boolean>(false);
 
   useEffect(() => {
-    setIsMounted(true);
-    if (sessionStorage.getItem('uap_authed') === 'true') {
-      setIsAuthenticated(true);
-    }
+    const timer = setTimeout(() => {
+      setIsMounted(true);
+      if (sessionStorage.getItem('uap_authed') === 'true') {
+        setIsAuthenticated(true);
+      }
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleAuth = (state: boolean) => {
@@ -45,7 +48,6 @@ export default function Dashboard() {
   // User State
   const [keys, setKeys] = useState<any>(null);
   const [mandate, setMandate] = useState<any>(null);
-  const [signature, setSignature] = useState<string>('');
   const [userTelemetry, setUserTelemetry] = useState<AgentExecutionTelemetry | null>(null);
   const [verificationBundle, setVerificationBundle] = useState<MandateVerificationBundle | null>(null);
 
@@ -104,10 +106,9 @@ export default function Dashboard() {
       const intentMandate = responseJson.data;
       setUserTelemetry(responseJson.telemetry);
       
-      const { keys, augmentedPayload, signature, verificationBundle } = await generateKeysAndSign(intentMandate);
+      const { keys, augmentedPayload, verificationBundle } = await generateKeysAndSign(intentMandate);
       setKeys(keys);
       setMandate(augmentedPayload);
-      setSignature(signature);
       setVerificationBundle(verificationBundle);
       setFulfillment(null);
       setMerchantTelemetry(null);
