@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Razorpay UAP · AI Risk Manager",
+  title: "Mandate - Trust the intent. Verify the action.",
   description:
     "Deterministic detector, cryptographic verifier, and automated dispute responder for agentic commerce settlement",
 };

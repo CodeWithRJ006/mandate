@@ -208,10 +208,11 @@ export default function Dashboard() {
   return (
     <div className={`min-h-screen p-8 text-slate-200 bg-slate-950 transition-colors duration-500 ${flashColor}`}>
       <header className="mb-10 text-center relative max-w-6xl mx-auto">
-        <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 tracking-tight">
-          Razorpay UAP · AI Risk Manager
+        <h1 className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 tracking-tight">
+          Mandate
         </h1>
-        <p className="mt-2 text-slate-400">Detector · Verifier · Auto-Responder</p>
+        <p className="mt-3 text-lg font-medium text-slate-300">Trust the intent. Verify the action.</p>
+        <p className="mt-1 text-sm text-slate-500">Detector · Verifier · Auto-Responder</p>
         <div className="mt-4">
           <Link href="/eval" className="text-sm font-medium text-purple-400 hover:text-purple-300 border border-purple-500/30 bg-purple-900/20 px-4 py-2 rounded-full transition-colors inline-block">
             📊 View Risk Engine Evaluation Harness

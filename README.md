@@ -1,5 +1,7 @@
-# Razorpay UAP - Agentic Recourse Layer
-**Track 2: AI Risk Manager / Defense-Only Application**
+# Mandate
+> Trust the intent. Verify the action.
+
+**Razorpay UAP Track 2: AI Risk Manager / Defense-Only Application**
 
 [![CI](https://github.com/CodeWithRJ006/razorpay-uap-recourse/actions/workflows/ci.yml/badge.svg)](https://github.com/CodeWithRJ006/razorpay-uap-recourse/actions/workflows/ci.yml)
 ![Next.js](https://img.shields.io/badge/Next.js-14-black)
