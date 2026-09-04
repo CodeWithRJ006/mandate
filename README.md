@@ -109,7 +109,7 @@ GROQ_API_KEY=your_groq_api_key_here
 ```
 
 ### Run the Evaluation Harness
-To reproduce our 15.4% FPR tradeoff and mathematical tuning matrix directly in your terminal:
+To reproduce our 7.7% FPR tradeoff and mathematical tuning matrix directly in your terminal:
 ```bash
 npx tsx scripts/evaluate-risk-engine.ts
 ```
