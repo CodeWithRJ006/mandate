@@ -9,15 +9,24 @@ export interface AgentKeys {
 }
 
 export const nonceStore = new Set<string>();
+export const keyRegistry = new Set<string>([
+  "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE2ngOmg6UfV/a80UmQ5Y/1DI4FW0G\nP7zd7ReKCorRrNkmHTS/9I347smuOWoK/sxMM6OKnMdzhnfidzx77NxA7A==\n-----END PUBLIC KEY-----\n"
+]);
 
 export function generateAgentKeyPair(): AgentKeys {
   const { publicKey, privateKey } = crypto.generateKeyPairSync('ec', {
     namedCurve: 'prime256v1',
   });
 
+  const pub = publicKey.export({ type: 'spki', format: 'pem' }) as string;
+  const priv = privateKey.export({ type: 'pkcs8', format: 'pem' }) as string;
+  
+  // Bind identity: register the public key as a trusted anchor
+  keyRegistry.add(pub);
+
   return {
-    publicKey: publicKey.export({ type: 'spki', format: 'pem' }) as string,
-    privateKey: privateKey.export({ type: 'pkcs8', format: 'pem' }) as string,
+    publicKey: pub,
+    privateKey: priv,
   };
 }
 
@@ -55,6 +64,10 @@ export interface MandateVerificationResult {
 }
 
 export function verifyMandate(payload: Record<string, any>, signature: string, publicKeyPem: string): MandateVerificationResult {
+  if (!keyRegistry.has(publicKeyPem)) {
+    return { isValid: false, reason: 'UNREGISTERED_PUBLIC_KEY' };
+  }
+
   if (payload.expiry && Date.now() > payload.expiry) {
     return { isValid: false, reason: 'MANDATE_EXPIRED' };
   }

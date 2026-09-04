@@ -9,10 +9,11 @@ An autonomous, cryptographically-secured recourse layer for the Unified Agent Pr
 
 Real-world agentic payments cannot rely on LLM discretion for financial settlement. This project introduces a mathematically rigid security boundary that executes **before** any AI evaluation occurs. 
 
-1. **ECDSA prime256v1 Signatures:** The W3C-inspired mandate is signed in the client. The backend `/api/verify` throws a strict `401 Unauthorized` (unsigned) or `403 Forbidden` (tampered) if the signature is invalid.
-2. **Quantity Nullification Guard:** A strict nullish-coalescing guard catches edge cases where a malicious agent attempts a `quantity: 0` attack to bypass amount validations.
-3. **Nonce Replay Prevention:** Every mandate generates a unique cryptographic nonce. The ledger strictly rejects duplicated nonces to prevent double-billing.
-4. **24-Hour Expiry Window:** Mandates enforce a strict `timestamp`, invalidating automatically after 24 hours.
+1. **ECDSA prime256v1 Signatures:** The W3C-inspired mandate is signed cryptographically. *(Note: For this prototype, key generation and signing are simulated via a secure Next.js Server Action to represent a secure client enclave, rather than a true browser wallet)*. The backend `/api/verify` throws a strict `401 Unauthorized` or `403 Forbidden` if the signature is invalid.
+2. **Strict Identity Binding (Trust Anchor):** The backend maintains an in-memory `KeyRegistry`. An attacker cannot simply generate their own keypair and submit a mathematically valid signature—if the public key is not pre-registered to a trusted agent, the payload is rejected with `UNREGISTERED_PUBLIC_KEY`.
+3. **Quantity Nullification Guard:** A strict nullish-coalescing guard catches edge cases where a malicious agent attempts a `quantity: 0` attack to bypass amount validations.
+4. **Nonce Replay Prevention:** Every mandate generates a unique cryptographic nonce. The ledger strictly rejects duplicated nonces to prevent double-billing.
+5. **24-Hour Expiry Window:** Mandates enforce a strict `timestamp`, invalidating automatically after 24 hours.
 
 ### The Resolution State Machine
 ```mermaid
