@@ -3,7 +3,7 @@
 
 **Razorpay UAP Track 2: AI Risk Manager / Defense-Only Application**
 
-[![Live Demo](https://img.shields.io/badge/Live_Demo-Vercel-black?logo=vercel&logoColor=white)](#) *(Note: Configure your Vercel deployment link here)*
+[![Live Demo](https://img.shields.io/badge/Live_Demo-mandate--six.vercel.app-3A3BFF?style=for-the-badge&logo=vercel&logoColor=white)](https://mandate-six.vercel.app/)
 [![CI](https://github.com/CodeWithRJ006/razorpay-uap-recourse/actions/workflows/ci.yml/badge.svg)](https://github.com/CodeWithRJ006/razorpay-uap-recourse/actions/workflows/ci.yml)
 ![Next.js](https://img.shields.io/badge/Next.js-14-black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
@@ -135,8 +135,8 @@ The GitHub Actions CI pipeline enforces `npm run lint`, `npx jest`, and `npm run
 
 1. **Clone & Install**
    ```bash
-   git clone https://github.com/CodeWithRJ006/razorpay-uap-recourse.git
-   cd razorpay-uap-recourse
+   git clone https://github.com/CodeWithRJ006/mandate.git
+   cd mandate
    npm install
    ```
 

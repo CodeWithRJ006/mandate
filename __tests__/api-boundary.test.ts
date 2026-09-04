@@ -5,7 +5,7 @@ describe('HTTP Boundary & Security Abuse Integration Tests', () => {
   const mockKeys = generateAgentKeyPair();
 
   const createRequest = (body: Record<string, unknown>) => {
-    return new Request('https://razorpay-uap-recourse.vercel.app/api/verify', {
+    return new Request('https://mandate-six.vercel.app/api/verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -35,7 +35,7 @@ describe('HTTP Boundary & Security Abuse Integration Tests', () => {
   });
 
   it('400 Bad Request: Rejects malformed JSON gracefully', async () => {
-    const req = new Request('https://razorpay-uap-recourse.vercel.app/api/verify', {
+    const req = new Request('https://mandate-six.vercel.app/api/verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: '{ malformed json ',
