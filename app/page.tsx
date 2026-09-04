@@ -125,6 +125,22 @@ export default function Dashboard() {
       setFulfillment(payload);
       setMerchantTelemetry(responseJson.telemetry);
 
+      const computeRiskScore = (reason: string | null | undefined): number => {
+        if (!reason) return 0;
+        switch (reason) {
+          case 'SIGNATURE_INVALID': return 100;
+          case 'UNREGISTERED_PUBLIC_KEY': return 100;
+          case 'NONCE_REUSED': return 100;
+          case 'MANDATE_EXPIRED': return 95;
+          case 'AMOUNT_EXCEEDED': return 90;
+          case 'QUANTITY_MISMATCH': return 85;
+          case 'SKU_MISMATCH': return 80;
+          case 'SKU_NUMERIC_DOWNGRADE': return 75;
+          case 'SKU_TIER_DOWNGRADE': return 75;
+          default: return 99;
+        }
+      };
+
       try {
         const evaluation = await evaluateDiff(
           currentMandate,
@@ -140,22 +156,24 @@ export default function Dashboard() {
         } else {
           setStatus('BLOCKED');
           triggerFlash('bg-red-500/20');
-          setRiskScore(99);
+          setRiskScore(computeRiskScore(evaluation.reason));
         }
         
         setResultReason(evaluation.reason || null);
       } catch (evalError: unknown) {
         setStatus('BLOCKED');
         triggerFlash('bg-red-500/20');
-        setRiskScore(99);
-        setResultReason((evalError as Error).message || 'Evaluation Engine Error');
+        const errReason = (evalError as Error).message || 'Evaluation Engine Error';
+        setRiskScore(computeRiskScore(errReason));
+        setResultReason(errReason);
       }
     } catch (e: unknown) {
       console.error(e);
       setApiWarning('Critical network failure triggering fallback execution.');
       setStatus('BLOCKED');
-      setRiskScore(99);
-      setResultReason((e as Error).message || 'Submission Failed');
+      const errReason = (e as Error).message || 'Submission Failed';
+      setRiskScore(computeRiskScore(errReason));
+      setResultReason(errReason);
     }
     setIsProcessing(false);
   };
