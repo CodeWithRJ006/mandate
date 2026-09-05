@@ -331,5 +331,59 @@
     "reason": null,
     "prevHash": "d8f4f525b2048afd8c60abb87204cb921ec29b7ee1f285183c3bd0eb96321372",
     "hash": "2a997f6c67f4e4d7c8123484d325df7d77bb5e163fde8f5719eb147fb3143827"
+  },
+  {
+    "index": 37,
+    "timestamp": 1788613181066,
+    "nonce": "8c805e53-04d0-4119-95d4-65324fa07752",
+    "verdict": "REJECTED",
+    "reason": "UNREGISTERED_PUBLIC_KEY",
+    "prevHash": "2a997f6c67f4e4d7c8123484d325df7d77bb5e163fde8f5719eb147fb3143827",
+    "hash": "2948cf746fc7e32dadb836428441663f4699419a054e81923d1a0bc707691118"
+  },
+  {
+    "index": 38,
+    "timestamp": 1788613181068,
+    "nonce": "d741ca6d-a8ee-4326-827f-f16e5b3e3db0",
+    "verdict": "REJECTED",
+    "reason": "SIGNATURE_INVALID",
+    "prevHash": "2948cf746fc7e32dadb836428441663f4699419a054e81923d1a0bc707691118",
+    "hash": "762a4981009dcfa5fab1112b8aae4340c79ba2674972a462145476a2725d6807"
+  },
+  {
+    "index": 39,
+    "timestamp": 1788613181071,
+    "nonce": "0de4f17f-ba20-402b-aa39-b8c81b08b963",
+    "verdict": "APPROVED",
+    "reason": null,
+    "prevHash": "762a4981009dcfa5fab1112b8aae4340c79ba2674972a462145476a2725d6807",
+    "hash": "d5ab1d1b1195dac659d78b7c6ec8886bcf5c88cfb19986c1395c6ad5924c32fa"
+  },
+  {
+    "index": 40,
+    "timestamp": 1788613760500,
+    "nonce": "83f084cc-61f1-4208-9d8c-bba7d3c36566",
+    "verdict": "REJECTED",
+    "reason": "UNREGISTERED_PUBLIC_KEY",
+    "prevHash": "d5ab1d1b1195dac659d78b7c6ec8886bcf5c88cfb19986c1395c6ad5924c32fa",
+    "hash": "8257e1b19fc30b9719d58ea873b2ab61b79b27ff8547338cdaa7e12af910e754"
+  },
+  {
+    "index": 41,
+    "timestamp": 1788613760502,
+    "nonce": "f6933c8b-a5b8-45ae-9d14-f4693f0eb54a",
+    "verdict": "REJECTED",
+    "reason": "SIGNATURE_INVALID",
+    "prevHash": "8257e1b19fc30b9719d58ea873b2ab61b79b27ff8547338cdaa7e12af910e754",
+    "hash": "e4eafe7031dd4f5c4362306bb2dd1d9e21db5eccfa9b5063c39b61456c9a6383"
+  },
+  {
+    "index": 42,
+    "timestamp": 1788613760505,
+    "nonce": "d79e36e8-ed73-4f64-b3c1-e1c9e80523b2",
+    "verdict": "APPROVED",
+    "reason": null,
+    "prevHash": "e4eafe7031dd4f5c4362306bb2dd1d9e21db5eccfa9b5063c39b61456c9a6383",
+    "hash": "b0d92982cf03db647f55020cabe0f9d257afeaa070b6f5cefc2a8a7ff4867afc"
   }
 ]

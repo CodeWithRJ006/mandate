@@ -13,8 +13,16 @@ export default function EvidenceDrawer({ mandateBundle }: { mandateBundle: Manda
 
   if (!mandateBundle) return null;
 
-  // Exact command provided in the prompt
-  const terminalCommand = `node -e "const c=require('crypto');const v=c.createVerify('SHA256');v.update('${JSON.stringify(mandateBundle!.payload)}');v.end();console.log('Signature Valid:',v.verify(\`${mandateBundle!.publicKeyPem}\`,'${mandateBundle!.signature}','base64'));"`;
+  const script = `const crypto = require('crypto');
+const pub = Buffer.from('${typeof btoa !== 'undefined' ? btoa(mandateBundle.publicKeyPem) : Buffer.from(mandateBundle.publicKeyPem).toString('base64')}', 'base64').toString('utf-8');
+const payload = Buffer.from('${typeof btoa !== 'undefined' ? btoa(JSON.stringify(mandateBundle.payload)) : Buffer.from(JSON.stringify(mandateBundle.payload)).toString('base64')}', 'base64').toString('utf-8');
+const sig = '${mandateBundle.signature}';
+const v = crypto.createVerify('SHA256');
+v.update(payload);
+v.end();
+console.log('Signature Verified:', v.verify(pub, sig, 'base64'));`;
+  const b64Script = typeof btoa !== 'undefined' ? btoa(script) : Buffer.from(script).toString('base64');
+  const terminalCommand = `node -e "eval(Buffer.from('${b64Script}', 'base64').toString('utf-8'))"`;
 
   function downloadEvidencePack() {
     const pack = {
