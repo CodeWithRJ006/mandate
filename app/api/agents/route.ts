@@ -53,7 +53,8 @@ export async function POST(req: Request) {
     if (mode === 'malicious') {
       const attackType = body.attackType || 'fee_padding';
       if (attackType === 'fee_padding') {
-        mockFulfillmentMalicious = { sku: baseSku, actual_amount: baseAmt + 150, quantity: baseQty };
+        const feePadding = Math.max(150, Math.ceil(baseAmt * 0.05)); // Always inject at least 5% or 150 to guarantee AMOUNT_EXCEEDED
+        mockFulfillmentMalicious = { sku: baseSku, actual_amount: baseAmt + feePadding, quantity: baseQty };
       } else if (attackType === 'sku_swap') {
         // Use a string that shares very few bigrams to ensure similarity < 0.60
         mockFulfillmentMalicious = { sku: `Generic Alternative`, actual_amount: baseAmt, quantity: baseQty };

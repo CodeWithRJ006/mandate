@@ -81,6 +81,8 @@ Real-world agentic payments cannot rely on LLM discretion for financial settleme
 
 ## 🎮 The Adversarial Playground (Live UI Demo)
 
+**Compliance Note (Defense-Only Track):** *To strictly comply with Razorpay's rules forbidding "offense-capable AI," all attacks in the playground bypass the LLM entirely. The malicious payloads are hardcoded, deterministic fixtures generated strictly to evaluate and prove the resilience of the security boundary test cases.*
+
 To empirically prove the resilience of the security boundary, the UI includes an **Adversarial Playground** containing 6 distinct, independently triggerable attack vectors. 
 
 *(Note: The playground automatically generates a fresh cryptographic mandate behind the scenes for every click, ensuring perfect test isolation and preventing earlier tests from polluting the nonce store).*

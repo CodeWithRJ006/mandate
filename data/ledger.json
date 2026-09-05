@@ -304,5 +304,32 @@
     "reason": null,
     "prevHash": "a126c7ef31a4c9984ff644881bf8b9783815af57e9e5812b418893886aaecad7",
     "hash": "ccf39c57bd42c31b0fe5053e91805ea0b64a2e393995dd9a577a5d81c7b7694b"
+  },
+  {
+    "index": 34,
+    "timestamp": 1788612486380,
+    "nonce": "4065206c-5c9a-49c3-9b72-1eef9bc5878b",
+    "verdict": "REJECTED",
+    "reason": "UNREGISTERED_PUBLIC_KEY",
+    "prevHash": "ccf39c57bd42c31b0fe5053e91805ea0b64a2e393995dd9a577a5d81c7b7694b",
+    "hash": "e7562ec4d090c12f88c2fcb97912b22c1ffe56273a0e5200875435dd6f47fd08"
+  },
+  {
+    "index": 35,
+    "timestamp": 1788612486383,
+    "nonce": "4d628c61-7d5a-45db-ba0c-9ec2bc89d7c8",
+    "verdict": "REJECTED",
+    "reason": "SIGNATURE_INVALID",
+    "prevHash": "e7562ec4d090c12f88c2fcb97912b22c1ffe56273a0e5200875435dd6f47fd08",
+    "hash": "d8f4f525b2048afd8c60abb87204cb921ec29b7ee1f285183c3bd0eb96321372"
+  },
+  {
+    "index": 36,
+    "timestamp": 1788612486385,
+    "nonce": "b6632586-d22b-4e1a-a071-0be55fea4dea",
+    "verdict": "APPROVED",
+    "reason": null,
+    "prevHash": "d8f4f525b2048afd8c60abb87204cb921ec29b7ee1f285183c3bd0eb96321372",
+    "hash": "2a997f6c67f4e4d7c8123484d325df7d77bb5e163fde8f5719eb147fb3143827"
   }
 ]

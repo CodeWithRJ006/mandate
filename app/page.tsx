@@ -71,12 +71,18 @@ export default function Dashboard() {
     setTimeout(() => setFlashColor(''), 1000);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleCopyCommand = () => {
     if (!verificationBundle) return;
-    const escapedPem = verificationBundle.publicKeyPem.replace(/\n/g, '\\n');
-    const escapedCanonical = verificationBundle.canonicalString.replace(/"/g, '\\"');
-    const cmd = `node -e "const crypto=require('crypto');const v=crypto.createVerify('SHA256');v.update('${escapedCanonical}');v.end();console.log('Signature Verified:',v.verify('${escapedPem}','${verificationBundle.signature}','base64'));"`;
+    const script = `const crypto = require('crypto');
+const pub = Buffer.from('${btoa(verificationBundle.publicKeyPem)}', 'base64').toString('utf-8');
+const payload = Buffer.from('${btoa(verificationBundle.canonicalString)}', 'base64').toString('utf-8');
+const sig = '${verificationBundle.signature}';
+const v = crypto.createVerify('SHA256');
+v.update(payload);
+v.end();
+console.log('Signature Verified:', v.verify(pub, sig, 'base64'));`;
+    const b64Script = btoa(script);
+    const cmd = `node -e "eval(Buffer.from('${b64Script}', 'base64').toString('utf-8'))"`;
     navigator.clipboard.writeText(cmd);
     alert('Independent verification command copied to clipboard!');
   };
